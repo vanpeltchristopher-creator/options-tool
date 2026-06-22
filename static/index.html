@@ -329,10 +329,6 @@
     <span class="header-sub">covered call</span>
   </div>
 
-  <div class="notice">
-    <strong>One-time setup:</strong> <code>pip install yfinance flask flask-cors</code><br>
-    <strong>Each time:</strong> run <code>python proxy.py</code> in this folder, then use the tool.
-  </div>
 
   <div class="ticker-row">
     <input id="ticker" class="ticker-input" value="JOBY" maxlength="8" placeholder="TICKER" autocomplete="off" spellcheck="false" />
@@ -625,7 +621,7 @@ async function fetchAll() {
     btn.textContent = 'Refresh'; btn.disabled = false;
 
   } catch(e) {
-    showErr('Could not load "' + ticker + '".\n\n' + e.message + '\n\nMake sure proxy.py is running:\n  pip install yfinance flask flask-cors\n  python proxy.py');
+    showErr('Could not load "' + ticker + '". ' + e.message);
     btn.textContent = 'Get quote + chain'; btn.disabled = false;
   }
 }
