@@ -236,23 +236,33 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
     </div>
 
     <hr />
-    <div class="section-label">Analysis output</div>
+    <div class="section-label">Position</div>
     <div class="metrics">
       <div class="metric"><div class="mlabel">Capital</div><div class="mval" id="mCapital"></div></div>
       <div class="metric"><div class="mlabel">$$$ Premium</div><div class="mval" id="mPrem"></div></div>
       <div class="metric"><div class="mlabel">Breakeven</div><div class="mval" id="mBE"></div></div>
-      <div class="metric"><div class="mlabel">Monthly ret%</div><div class="mval" id="mMonthly"></div></div>
       <div class="metric"><div class="mlabel">Strike OTM</div><div class="mval" id="mOTM"></div></div>
+      <div class="metric"><div class="mlabel">Days to exp</div><div class="mval" id="mDTE"></div></div>
+    </div>
+
+    <div class="section-label">Yield</div>
+    <div class="metrics">
       <div class="metric"><div class="mlabel">% prem/price</div><div class="mval" id="mPremPct"></div></div>
       <div class="metric"><div class="mlabel">% prem/strike</div><div class="mval" id="mPremStrike"></div></div>
-      <div class="metric"><div class="mlabel">Days to exp</div><div class="mval" id="mDTE"></div></div>
+      <div class="metric"><div class="mlabel">Annualized yield</div><div class="mval" id="mAnnual"></div></div>
+      <div class="metric" id="cardPct"><div class="mlabel">% profit at X</div><div class="mval" id="mPct"></div></div>
+    </div>
+
+    <div class="section-label">Exercise scenarios</div>
+    <div class="metrics" style="grid-template-columns: 1fr 1fr;">
+      <div class="metric" id="cardCalled"><div class="mlabel">Called away (stock &ge; strike)</div><div class="mval" id="mCalled"></div></div>
+      <div class="metric" id="cardExpires"><div class="mlabel">Expires worthless (prem kept)</div><div class="mval" id="mExpires"></div></div>
     </div>
 
     <div class="section-label">P&amp;L at target X</div>
     <div class="metrics" style="margin-bottom:1.5rem">
       <div class="metric" id="cardPnL"><div class="mlabel">Total P&amp;L</div><div class="mval" id="mPnL"></div></div>
       <div class="metric" id="cardPPS"><div class="mlabel">Per share</div><div class="mval" id="mPPS"></div></div>
-      <div class="metric" id="cardPct"><div class="mlabel">% profit</div><div class="mval" id="mPct"></div></div>
     </div>
 
     <div class="section-label">Option value decay — per share</div>
@@ -331,27 +341,40 @@ function calc(animate) {
     }
   }
 
-  var monthlyReturn = dteNum > 0 ? (premPctPrice / dteNum) * 30 : 0;
+  var annualYield = dteNum > 0 ? (premPctPrice * 365 / dteNum) : 0;
+
+  // P&L at target X
   var pnlPS = premium + Math.min(targetX, strike) - price;
   var pnlT  = pnlPS * shares;
   var pctP  = capital ? (pnlT / capital) * 100 : 0;
 
-  ['cardPnL','cardPPS','cardPct'].forEach(function(id) {
+  // Exercise scenarios
+  var calledPS  = (strike - price) + premium;   // stock called away at strike
+  var calledT   = calledPS * shares;
+  var expiresT  = dollarPrem;                   // expires worthless, keep premium
+  var expiresPS = premium;
+
+  ['cardPnL','cardPPS'].forEach(function(id) {
     document.getElementById(id).className = 'metric' + (pnlT > 0 ? ' highlight' : pnlT < 0 ? ' loss' : '');
   });
+  document.getElementById('cardPct').className    = 'metric' + (pctP > 0 ? ' highlight' : pctP < 0 ? ' loss' : '');
+  document.getElementById('cardCalled').className  = 'metric' + (calledT > 0 ? ' highlight' : calledT < 0 ? ' loss' : '');
+  document.getElementById('cardExpires').className = 'metric highlight';
 
   var metrics = [
     { id: 'mCapital',    value: fmt(capital, 0) },
     { id: 'mPrem',       value: fmt(dollarPrem, 0) },
     { id: 'mBE',         value: fmt(effCost) },
-    { id: 'mMonthly',    value: fmtPct(monthlyReturn) },
     { id: 'mOTM',        value: fmt(otm) },
+    { id: 'mDTE',        value: dte },
     { id: 'mPremPct',    value: fmtPct(premPctPrice) },
     { id: 'mPremStrike', value: fmtPct(premPctStrike) },
-    { id: 'mDTE',        value: dte },
+    { id: 'mAnnual',     value: fmtPct(annualYield) },
+    { id: 'mPct',        value: fmtPct(pctP) },
+    { id: 'mCalled',     value: fmt(calledPS) + ' / ' + fmt(calledT, 0) + ' total' },
+    { id: 'mExpires',    value: fmt(expiresPS) + ' / ' + fmt(expiresT, 0) + ' total' },
     { id: 'mPnL',        value: fmt(pnlT, 0) },
     { id: 'mPPS',        value: fmt(pnlPS) },
-    { id: 'mPct',        value: fmtPct(pctP) },
   ];
 
   if (animate) {
