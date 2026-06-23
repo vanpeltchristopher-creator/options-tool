@@ -298,6 +298,13 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
       <div class="dos-cursor"></div>
     </div>
 
+    <div class="ticker-row" style="margin-bottom:1.25rem;">
+      <span class="ticker-prompt">TICKER:&gt;</span>
+      <input id="r_ticker_top" type="text" placeholder="______" maxlength="8" autocomplete="off" spellcheck="false" style="text-transform:uppercase;font-size:18px;font-weight:700;width:110px;letter-spacing:0.1em;border-color:#ffcc0077;" />
+      <button id="r_loadBtn">[ LOAD CHAIN ]</button>
+      <span id="r_status" style="font-size:11px;color:#664d00;"></span>
+    </div>
+
     <div class="section-label">Current position</div>
     <div class="inputs-grid" style="grid-template-columns:1fr 1fr;">
       <div class="field">
@@ -324,13 +331,6 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
       <div class="metric"><div class="mlabel">Cost to cover</div><div class="mval" id="r_cost_to_cover">—</div></div>
       <div class="metric" id="r_card_deficit"><div class="mlabel">Deficit</div><div class="mval" id="r_deficit">—</div></div>
       <div class="metric"><div class="mlabel">Contracts × 100</div><div class="mval" id="r_shares">—</div></div>
-    </div>
-
-    <div class="ticker-row" style="margin-bottom:1.25rem;">
-      <span class="ticker-prompt">TICKER:&gt;</span>
-      <input id="r_ticker_top" type="text" placeholder="______" maxlength="8" autocomplete="off" spellcheck="false" style="text-transform:uppercase;font-size:18px;font-weight:700;width:110px;letter-spacing:0.1em;border-color:#ffcc0077;" />
-      <button id="r_loadBtn">[ LOAD CHAIN ]</button>
-      <span id="r_status" style="font-size:11px;color:#664d00;"></span>
     </div>
 
     <hr />
@@ -740,12 +740,18 @@ async function fetchAll() {
     // Load 3-month price history
     try {
       var hist = await apiFetch('/history/' + ticker);
-      if (hist.dates && hist.closes) {
+      if (hist.dates && hist.closes && hist.closes.length > 0) {
         document.getElementById('priceChartLabel').textContent = ticker;
         document.getElementById('priceChartSection').style.display = 'block';
         drawPriceChart(hist.dates, hist.closes);
+      } else {
+        document.getElementById('priceChartLabel').textContent = ticker + ' — no data';
+        document.getElementById('priceChartSection').style.display = 'block';
       }
-    } catch(e) { /* chart is optional, don't block on failure */ }
+    } catch(e) {
+      document.getElementById('priceChartLabel').textContent = ticker + ' — chart unavailable: ' + e.message;
+      document.getElementById('priceChartSection').style.display = 'block';
+    }
 
     if (dates.length) {
       document.getElementById('chainStatus').textContent = 'LOADING...';
