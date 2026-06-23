@@ -299,11 +299,7 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
     </div>
 
     <div class="section-label">Current position</div>
-    <div class="inputs-grid" style="grid-template-columns:1fr 1fr 1fr;">
-      <div class="field">
-        <label>Ticker</label>
-        <input type="text" id="r_ticker" placeholder="______" maxlength="8" autocomplete="off" spellcheck="false" style="text-transform:uppercase;" />
-      </div>
+    <div class="inputs-grid" style="grid-template-columns:1fr 1fr;">
       <div class="field">
         <label>Contracts</label>
         <input type="number" id="r_contracts" value="10" min="1" step="1" />
@@ -330,7 +326,12 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
       <div class="metric"><div class="mlabel">Contracts × 100</div><div class="mval" id="r_shares">—</div></div>
     </div>
 
-    <div style="margin-top:1rem;"><button id="r_loadBtn">[ LOAD CHAIN ]</button> &nbsp; <span id="r_status" style="font-size:11px;color:#664d00;"></span></div>
+    <div class="ticker-row" style="margin-bottom:1.25rem;">
+      <span class="ticker-prompt">TICKER:&gt;</span>
+      <input id="r_ticker_top" type="text" placeholder="______" maxlength="8" autocomplete="off" spellcheck="false" style="text-transform:uppercase;font-size:18px;font-weight:700;width:110px;letter-spacing:0.1em;border-color:#ffcc0077;" />
+      <button id="r_loadBtn">[ LOAD CHAIN ]</button>
+      <span id="r_status" style="font-size:11px;color:#664d00;"></span>
+    </div>
 
     <hr />
 
@@ -858,7 +859,7 @@ function r_ensureHidden(id) {
 
 async function r_loadCurStrikes() {
   var expiry = document.getElementById('r_cur_expiry').value;
-  var ticker = document.getElementById('r_ticker').value.trim().toUpperCase();
+  var ticker = document.getElementById('r_ticker_top').value.trim().toUpperCase();
   if (!expiry || !ticker) return;
   document.getElementById('r_cur_strike').innerHTML = '<option value="">LOADING...</option>';
 
@@ -884,7 +885,7 @@ async function r_loadCurStrikes() {
 
 async function r_loadNewStrikes() {
   var expiry = document.getElementById('r_new_expiry').value;
-  var ticker = document.getElementById('r_ticker').value.trim().toUpperCase();
+  var ticker = document.getElementById('r_ticker_top').value.trim().toUpperCase();
   if (!expiry || !ticker) return;
   document.getElementById('r_new_strike').innerHTML = '<option value="">LOADING...</option>';
 
@@ -909,7 +910,7 @@ async function r_loadNewStrikes() {
 }
 
 async function r_loadChain() {
-  var ticker = document.getElementById('r_ticker').value.trim().toUpperCase();
+  var ticker = document.getElementById('r_ticker_top').value.trim().toUpperCase();
   if (!ticker) return;
   r_setStatus('LOADING...');
   rollChainCache = {};
@@ -941,7 +942,7 @@ r_ensureHidden('r_cost_to_cover_raw');
 r_ensureHidden('r_new_prem_raw');
 
 document.getElementById('r_loadBtn').addEventListener('click', r_loadChain);
-document.getElementById('r_ticker').addEventListener('keydown', function(e) { if (e.key === 'Enter') r_loadChain(); });
+document.getElementById('r_ticker_top').addEventListener('keydown', function(e) { if (e.key === 'Enter') r_loadChain(); });
 
 document.getElementById('r_cur_expiry').addEventListener('change', r_loadCurStrikes);
 document.getElementById('r_new_expiry').addEventListener('change', r_loadNewStrikes);
