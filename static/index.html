@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Call Option Analyzer</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -325,7 +325,7 @@
 <body>
 <div class="card">
   <div class="header">
-    <h1>Call Option Analyzer</h1>
+    <h1>C:\TRADING\OPTIONS.EXE &nbsp; VER 1.0</h1>
     <span class="header-sub">covered call</span>
   </div>
 
@@ -488,11 +488,11 @@ function drawChart(price, strike, premium, shares) {
       {
         label: 'Option value / share',
         data: data,
-        borderColor: '#58a6ff',
+        borderColor: '#ffcc00',
         backgroundColor: function(ctx2) {
           var g = ctx2.chart.ctx.createLinearGradient(0, 0, 0, 200);
-          g.addColorStop(0, 'rgba(88,166,255,0.15)');
-          g.addColorStop(1, 'rgba(88,166,255,0)');
+          g.addColorStop(0, 'rgba(255,204,0,0.12)');
+          g.addColorStop(1, 'rgba(255,204,0,0)');
           return g;
         },
         borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true,
@@ -501,7 +501,7 @@ function drawChart(price, strike, premium, shares) {
       {
         label: 'Total $ value',
         data: dollarData,
-        borderColor: '#3fb950',
+        borderColor: '#aacc00',
         borderWidth: 1.5,
         borderDash: [4, 3],
         pointRadius: 0,
@@ -515,14 +515,14 @@ function drawChart(price, strike, premium, shares) {
       plugins: {
         legend: {
           display: true,
-          labels: { color: '#8b949e', font: { family: "'JetBrains Mono', monospace", size: 10 }, boxWidth: 12 }
+          labels: { color: '#8b949e', font: { family: "'IBM Plex Mono', monospace", size: 10 }, boxWidth: 12 }
         },
         tooltip: {
-          backgroundColor: '#161b22',
-          borderColor: 'rgba(240,246,252,0.1)',
+          backgroundColor: '#0a0a00',
+          borderColor: 'rgba(255,204,0,0.15)',
           borderWidth: 1,
-          titleColor: '#8b949e',
-          bodyColor: '#e6edf3',
+          titleColor: '#886600',
+          bodyColor: '#ffcc00',
           callbacks: {
             title: function(l) { return 'Days remaining: ' + l[0].label; },
             label: function(c) {
@@ -534,25 +534,25 @@ function drawChart(price, strike, premium, shares) {
       },
       scales: {
         x: {
-          title: { display: true, text: 'Days to expiry', color: '#484f58', font: { size: 10 } },
-          ticks: { maxTicksLimit: 8, color: '#484f58', font: { family: "'JetBrains Mono', monospace", size: 10 } },
-          grid: { color: 'rgba(240,246,252,0.06)' },
-          border: { color: 'rgba(240,246,252,0.1)' }
+          title: { display: true, text: 'Days to expiry', color: '#886600', font: { size: 10 } },
+          ticks: { maxTicksLimit: 8, color: '#886600', font: { family: "'IBM Plex Mono', monospace", size: 10 } },
+          grid: { color: 'rgba(255,204,0,0.06)' },
+          border: { color: 'rgba(255,204,0,0.15)' }
         },
         y: {
           position: 'left',
-          title: { display: true, text: '$/share', color: '#484f58', font: { size: 10 } },
-          ticks: { color: '#484f58', font: { family: "'JetBrains Mono', monospace", size: 10 }, callback: function(v) { return '$' + v.toFixed(2); } },
-          grid: { color: 'rgba(240,246,252,0.06)' },
-          border: { color: 'rgba(240,246,252,0.1)' }
+          title: { display: true, text: '$/share', color: '#886600', font: { size: 10 } },
+          ticks: { color: '#886600', font: { family: "'IBM Plex Mono', monospace", size: 10 }, callback: function(v) { return '$' + v.toFixed(2); } },
+          grid: { color: 'rgba(255,204,0,0.06)' },
+          border: { color: 'rgba(255,204,0,0.15)' }
         },
         y2: {
           display: true,
           position: 'right',
-          title: { display: true, text: 'Total $', color: '#484f58', font: { size: 10 } },
-          ticks: { color: '#484f58', font: { family: "'JetBrains Mono', monospace", size: 10 }, callback: function(v) { return '$' + v.toLocaleString(); } },
+          title: { display: true, text: 'Total $', color: '#886600', font: { size: 10 } },
+          ticks: { color: '#886600', font: { family: "'IBM Plex Mono', monospace", size: 10 }, callback: function(v) { return '$' + v.toLocaleString(); } },
           grid: { drawOnChartArea: false },
-          border: { color: 'rgba(240,246,252,0.1)' }
+          border: { color: 'rgba(255,204,0,0.15)' }
         }
       }
     }
