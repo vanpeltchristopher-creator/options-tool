@@ -230,7 +230,7 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
       <div class="field"><label>Price today ($)</label><input type="number" id="price" value="" step="0.01" min="0" /></div>
       <div class="field auto"><label>Strike — click row above</label><input type="number" id="strike" value="" step="0.01" min="0" /></div>
       <div class="field auto"><label>Premium / last ($)</label><input type="number" id="premium" value="" step="0.01" min="0" /></div>
-      <div class="field"><label>Shares</label><input type="number" id="shares" value="1000" step="100" min="1" /></div>
+      <div class="field"><label>Contracts</label><input type="number" id="contracts" value="10" step="1" min="1" /></div>
       <div class="field auto"><label>Expiry date</label><input type="text" id="expiry" value="" placeholder="YYYY-MM-DD" /></div>
       <div class="field"><label>Target price at X ($)</label><input type="number" id="targetX" value="" step="0.01" min="0" /></div>
     </div>
@@ -321,7 +321,8 @@ function calc(animate) {
   var price   = parseFloat(document.getElementById('price').value)   || 0;
   var strike  = parseFloat(document.getElementById('strike').value)  || 0;
   var premium = parseFloat(document.getElementById('premium').value) || 0;
-  var shares  = parseInt(document.getElementById('shares').value)    || 0;
+  var contracts = parseInt(document.getElementById('contracts').value) || 0;
+  var shares    = contracts * 100;
   var targetX = parseFloat(document.getElementById('targetX').value) || price;
   var expVal  = document.getElementById('expiry').value;
 
@@ -592,7 +593,7 @@ async function fetchAll() {
 document.getElementById('fetchBtn').addEventListener('click', fetchAll);
 document.getElementById('ticker').addEventListener('keydown', function(e) { if (e.key === 'Enter') fetchAll(); });
 document.getElementById('expirySelect').addEventListener('change', loadChain);
-['price','strike','premium','shares','expiry','targetX'].forEach(function(id) {
+['price','strike','premium','contracts','expiry','targetX'].forEach(function(id) {
   document.getElementById(id).addEventListener('input', function() { calc(false); });
 });
 </script>
