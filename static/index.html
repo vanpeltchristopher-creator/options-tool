@@ -355,8 +355,10 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
     <div class="metric" id="cardPct"><div class="mlabel">% profit</div><div class="mval" id="mPct">—</div></div>
   </div>
 
-  <div class="section-label">Option value decay (theta)</div>
-  <canvas id="payoffChart" height="200"></canvas>
+  <div class="section-label">Option value decay — per share</div>
+  <canvas id="chart1" height="160"></canvas>
+  <div class="section-label" style="margin-top:1rem">Option value decay — total position ($)</div>
+  <canvas id="chart2" height="160"></canvas>
 
   <div style="font-size:9px;color:#443300;letter-spacing:0.1em;margin-top:1rem;border-top:1px solid #ffcc0011;padding-top:8px;">
     F1=HELP &nbsp; F5=REFRESH &nbsp; F10=EXIT &nbsp;&nbsp;&nbsp; DATA DELAYED 15 MIN &nbsp;&nbsp;&nbsp; (C) 1987 CVP TRADE SYSTEMS INC.
@@ -426,195 +428,104 @@ function calc() {
 
 function drawChart(price, strike, premium, shares, totalDays) {
   if (!totalDays || totalDays < 1) totalDays = 30;
-  var labels = [], data = [], dollarData = [];
+  var labels = [], perShare = [], total = [];
   var pts = Math.min(totalDays, 120);
   for (var i = 0; i <= pts; i++) {
     var daysLeft = Math.round((pts - i) * totalDays / pts);
     labels.push(daysLeft + 'd');
-    var timeValue = premium * Math.sqrt(daysLeft / totalDays);
-    data.push(parseFloat(timeValue.toFixed(4)));
-    dollarData.push(parseFloat((timeValue * shares).toFixed(2)));
+    var tv = premium * Math.sqrt(daysLeft / totalDays);
+    perShare.push(parseFloat(tv.toFixed(4)));
+    total.push(parseFloat((tv * shares).toFixed(2)));
   }
-  var ctx = document.getElementById('payoffChart').getContext('2d');
-  if (chart) chart.destroy();
-  chart = new Chart(ctx, {
+
+  var chartDefaults = {
     type: 'line',
-    data: { labels: labels, datasets: [
-      {
-        label: 'Value/share',
-        data: data,
-        borderColor: '#ffcc00',
-        backgroundColor: 'rgba(255,204,0,0.07)',
-        borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true, yAxisID: 'y'
-      },
-      {
-        label: 'Total $',
-        data: dollarData,
-        borderColor: '#aacc00',
-        borderWidth: 1.5,
-        borderDash: [4, 3],
-        pointRadius: 0, tension: 0.4, fill: false, yAxisID: 'y2'
-      }
-    ]},
     options: {
       responsive: true, animation: false,
       plugins: {
-        legend: {
-          display: true,
-          labels: { color: '#886600', font: { family: "'IBM Plex Mono', monospace", size: 10 }, boxWidth: 12 }
-        },
+        legend: { display: false },
         tooltip: {
           backgroundColor: '#0a0800',
           borderColor: 'rgba(255,204,0,0.3)',
           borderWidth: 1,
           titleColor: '#886600',
           bodyColor: '#ffcc00',
-          callbacks: {
-            title: function(l) { return 'DAYS REM: ' + l[0].label; },
-            label: function(c) {
-              return c.datasetIndex === 0 ? '  PER SHARE: $' + c.raw.toFixed(2) : '  TOTAL: $' + c.raw.toLocaleString();
-            }
-          }
         }
       },
       scales: {
         x: {
-          title: { display: true, text: 'DAYS TO EXPIRY', color: '#664d00', font: { family: "'IBM Plex Mono', monospace", size: 9 } },
           ticks: { maxTicksLimit: 8, color: '#664d00', font: { family: "'IBM Plex Mono', monospace", size: 10 } },
           grid: { color: 'rgba(255,204,0,0.06)' },
           border: { color: 'rgba(255,204,0,0.2)' }
         },
         y: {
-          display: true, position: 'left',
-          title: { display: true, text: '$/SHARE', color: '#664d00', font: { family: "'IBM Plex Mono', monospace", size: 9 } },
-          ticks: { color: '#664d00', font: { family: "'IBM Plex Mono', monospace", size: 10 }, callback: function(v) { return '$' + v.toFixed(2); } },
+          min: 0,
+          ticks: { color: '#664d00', font: { family: "'IBM Plex Mono', monospace", size: 10 } },
           grid: { color: 'rgba(255,204,0,0.06)' },
-          border: { color: 'rgba(255,204,0,0.2)' }
-        },
-        y2: {
-          display: true, position: 'right',
-          title: { display: true, text: 'TOTAL $', color: '#664d00', font: { family: "'IBM Plex Mono', monospace", size: 9 } },
-          ticks: { color: '#664d00', font: { family: "'IBM Plex Mono', monospace", size: 10 }, callback: function(v) { return '$' + v.toLocaleString(); } },
-          grid: { drawOnChartArea: false },
           border: { color: 'rgba(255,204,0,0.2)' }
         }
       }
     }
+  };
+
+  if (chart) { chart.destroy(); chart = null; }
+  if (window.chart2inst) { window.chart2inst.destroy(); window.chart2inst = null; }
+
+  var ctx1 = document.getElementById('chart1').getContext('2d');
+  chart = new Chart(ctx1, {
+    type: 'line',
+    data: { labels: labels, datasets: [{
+      data: perShare,
+      borderColor: '#ffcc00',
+      backgroundColor: 'rgba(255,204,0,0.07)',
+      borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true
+    }]},
+    options: Object.assign({}, chartDefaults.options, {
+      plugins: Object.assign({}, chartDefaults.options.plugins, {
+        tooltip: Object.assign({}, chartDefaults.options.plugins.tooltip, {
+          callbacks: {
+            title: function(l) { return 'DAYS REM: ' + l[0].label; },
+            label: function(c) { return '  VALUE/SHARE: $' + c.raw.toFixed(2); }
+          }
+        })
+      }),
+      scales: Object.assign({}, chartDefaults.options.scales, {
+        y: Object.assign({}, chartDefaults.options.scales.y, {
+          ticks: Object.assign({}, chartDefaults.options.scales.y.ticks, {
+            callback: function(v) { return '$' + v.toFixed(2); }
+          })
+        })
+      })
+    })
   });
-}
 
-async function apiFetch(path) {
-  var res = await fetch(API + path, { signal: AbortSignal.timeout(30000) });
-  var data = await res.json();
-  if (!res.ok) throw new Error(data.error || ('Server error ' + res.status));
-  return data;
-}
-
-function renderChain(expiry, calls) {
-  if (!calls || !calls.length) { document.getElementById('chainStatus').textContent = 'NO DATA'; return; }
-  document.getElementById('chainStatus').textContent = calls.length + ' STRIKES LOADED';
-  var tbody = document.getElementById('strikeBody');
-  tbody.innerHTML = '';
-  var atmIdx = 0, minDiff = Infinity;
-  calls.forEach(function(c, i) { var d = Math.abs(c.strike - currentPrice); if (d < minDiff) { minDiff = d; atmIdx = i; } });
-
-  calls.forEach(function(c, i) {
-    var itm = c.inTheMoney, last = c.lastPrice || 0;
-    var iv = c.impliedVolatility ? (c.impliedVolatility * 100).toFixed(1) + '%' : '—';
-    var tr = document.createElement('tr');
-    if (i === atmIdx) tr.classList.add('atm');
-    tr.innerHTML =
-      '<td><span class="badge ' + (itm ? 'badge-itm' : 'badge-otm') + '">' + (itm ? 'ITM' : 'OTM') + '</span>' + fmt(c.strike) + '</td>' +
-      '<td>' + fmt(last) + '</td>' +
-      '<td>' + (c.bid ? fmt(c.bid) : '—') + '</td>' +
-      '<td>' + (c.ask ? fmt(c.ask) : '—') + '</td>' +
-      '<td>' + (c.volume || 0).toLocaleString() + '</td>' +
-      '<td>' + (c.openInterest || 0).toLocaleString() + '</td>' +
-      '<td>' + iv + '</td>';
-    (function(strike, lastPrice, expiry) {
-      tr.addEventListener('click', function() {
-        document.querySelectorAll('#strikeBody tr').forEach(function(r) { r.classList.remove('selected'); });
-        tr.classList.add('selected');
-        document.getElementById('strike').value  = strike.toFixed(2);
-        document.getElementById('premium').value = lastPrice.toFixed(2);
-        document.getElementById('expiry').value  = expiry;
-        calc();
-      });
-    })(c.strike, last, expiry);
-    tbody.appendChild(tr);
+  var ctx2 = document.getElementById('chart2').getContext('2d');
+  window.chart2inst = new Chart(ctx2, {
+    type: 'line',
+    data: { labels: labels, datasets: [{
+      data: total,
+      borderColor: '#aacc00',
+      backgroundColor: 'rgba(170,204,0,0.07)',
+      borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true
+    }]},
+    options: Object.assign({}, chartDefaults.options, {
+      plugins: Object.assign({}, chartDefaults.options.plugins, {
+        tooltip: Object.assign({}, chartDefaults.options.plugins.tooltip, {
+          callbacks: {
+            title: function(l) { return 'DAYS REM: ' + l[0].label; },
+            label: function(c) { return '  TOTAL VALUE: $' + c.raw.toLocaleString(); }
+          }
+        })
+      }),
+      scales: Object.assign({}, chartDefaults.options.scales, {
+        y: Object.assign({}, chartDefaults.options.scales.y, {
+          ticks: Object.assign({}, chartDefaults.options.scales.y.ticks, {
+            callback: function(v) { return '$' + v.toLocaleString(); }
+          })
+        })
+      })
+    })
   });
-  var rows = tbody.querySelectorAll('tr');
-  if (rows[atmIdx]) rows[atmIdx].scrollIntoView({ block: 'center' });
-}
-
-async function loadChain() {
-  var expiry = document.getElementById('expirySelect').value;
-  if (!expiry) return;
-  if (chainCache[expiry]) { renderChain(expiry, chainCache[expiry]); return; }
-  document.getElementById('chainStatus').textContent = 'LOADING...';
-  var ticker = document.getElementById('ticker').value.trim().toUpperCase();
-  try {
-    var data = await apiFetch('/chain/' + ticker + '/' + expiry);
-    chainCache[expiry] = data.calls;
-    renderChain(expiry, data.calls);
-  } catch(e) {
-    document.getElementById('chainStatus').textContent = 'ERROR: ' + e.message;
-  }
-}
-
-async function fetchAll() {
-  var ticker = document.getElementById('ticker').value.trim().toUpperCase();
-  if (!ticker) return;
-  showErr('');
-  var btn = document.getElementById('fetchBtn');
-  btn.textContent = '[ LOADING... ]'; btn.disabled = true;
-  chainCache = {};
-
-  try {
-    var quoteP = apiFetch('/quote/' + ticker);
-    var chainP = apiFetch('/chain/' + ticker);
-    var quote  = await quoteP;
-    var chain  = await chainP;
-
-    currentPrice = quote.price;
-    var change = currentPrice - quote.prev;
-    var changePct = quote.prev ? (change / quote.prev) * 100 : 0;
-
-    document.getElementById('qPrice').textContent = '$' + currentPrice.toFixed(2);
-    document.getElementById('qName').textContent  = quote.name.toUpperCase();
-    document.getElementById('qChange').textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + ' (' + changePct.toFixed(2) + '%)';
-    document.getElementById('qChange').className = 'quote-change ' + (change >= 0 ? 'pos' : 'neg');
-    document.getElementById('quoteStrip').style.display = 'flex';
-    document.getElementById('price').value   = currentPrice.toFixed(2);
-    document.getElementById('targetX').value = currentPrice.toFixed(2);
-
-    var dates = chain.expirations || [];
-    var sel = document.getElementById('expirySelect');
-    sel.innerHTML = '';
-    dates.forEach(function(d) {
-      var opt = document.createElement('option');
-      opt.value = d;
-      var parts = d.split('-');
-      var dt = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-      opt.textContent = dt.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).toUpperCase();
-      sel.appendChild(opt);
-    });
-
-    document.getElementById('chainSection').style.display = 'block';
-    if (dates.length) {
-      document.getElementById('chainStatus').textContent = 'LOADING...';
-      var firstChain = await apiFetch('/chain/' + ticker + '/' + dates[0]);
-      chainCache[dates[0]] = firstChain.calls;
-      renderChain(dates[0], firstChain.calls);
-    }
-
-    calc();
-    btn.textContent = '[ REFRESH ]'; btn.disabled = false;
-
-  } catch(e) {
-    showErr('ERROR: COULD NOT LOAD "' + ticker + '"\n' + e.message);
-    btn.textContent = '[ LOAD QUOTE ]'; btn.disabled = false;
-  }
 }
 
 document.getElementById('fetchBtn').addEventListener('click', fetchAll);
