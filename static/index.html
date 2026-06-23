@@ -185,6 +185,13 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
 <body>
 <div class="card">
 
+  <!-- TAB NAV -->
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('tab1')">[ ANALYZER ]</button>
+    <button class="tab-btn" onclick="switchTab('tab2')">[ ROLL-OUT SIMULATOR ]</button>
+  </div>
+
+  <div id="tab1">
   <div class="dos-header">
     <span class="dos-title">C:\TRADING\OPTIONS.EXE&nbsp;&nbsp;VER 1.0</span>
     <span class="dos-sub">// COVERED CALL ANALYZER</span>
@@ -202,6 +209,11 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
     <span class="quote-price" id="qPrice"></span>
     <span class="quote-name" id="qName"></span>
     <span class="quote-change" id="qChange"></span>
+  </div>
+
+  <div id="priceChartSection" style="display:none;margin-bottom:1.25rem;">
+    <div class="section-label">3-month price — <span id="priceChartLabel"></span></div>
+    <canvas id="priceChart" height="160"></canvas>
   </div>
 
   <div id="chainSection">
@@ -275,13 +287,102 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
     <canvas id="chart2" height="160"></canvas>
   </div>
 
-  <div class="dos-footer">
+  </div><!-- /tab1 -->
+
+  <!-- TAB 2: ROLL-OUT SIMULATOR -->
+  <div id="tab2" style="display:none;">
+
+    <div class="dos-header">
+      <span class="dos-title">C:\TRADING\ROLLOUT.EXE&nbsp;&nbsp;VER 1.0</span>
+      <span class="dos-sub">// ROLL-OUT SIMULATOR</span>
+      <div class="dos-cursor"></div>
+    </div>
+
+    <div class="section-label">Current position</div>
+    <div class="inputs-grid" style="grid-template-columns:1fr 1fr 1fr;">
+      <div class="field">
+        <label>Ticker</label>
+        <input type="text" id="r_ticker" placeholder="______" maxlength="8" autocomplete="off" spellcheck="false" style="text-transform:uppercase;" />
+      </div>
+      <div class="field">
+        <label>Contracts</label>
+        <input type="number" id="r_contracts" value="10" min="1" step="1" />
+      </div>
+      <div class="field">
+        <label>Current STO premium ($)</label>
+        <input type="number" id="r_sto" placeholder="0.00" step="0.01" min="0" />
+      </div>
+    </div>
+    <div class="inputs-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="field auto">
+        <label>Current expiry</label>
+        <select id="r_cur_expiry"><option value="">-- load ticker first --</option></select>
+      </div>
+      <div class="field auto">
+        <label>Current strike</label>
+        <select id="r_cur_strike"><option value="">-- select expiry --</option></select>
+      </div>
+    </div>
+
+    <div class="inputs-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:0;">
+      <div class="metric"><div class="mlabel">Cost to cover</div><div class="mval" id="r_cost_to_cover">—</div></div>
+      <div class="metric" id="r_card_deficit"><div class="mlabel">Deficit</div><div class="mval" id="r_deficit">—</div></div>
+      <div class="metric"><div class="mlabel">Contracts × 100</div><div class="mval" id="r_shares">—</div></div>
+    </div>
+
+    <div style="margin-top:1rem;"><button id="r_loadBtn">[ LOAD CHAIN ]</button> &nbsp; <span id="r_status" style="font-size:11px;color:#664d00;"></span></div>
+
+    <hr />
+
+    <div class="section-label">Roll-out target</div>
+    <div class="inputs-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="field auto">
+        <label>New expiry</label>
+        <select id="r_new_expiry"><option value="">-- load chain first --</option></select>
+      </div>
+      <div class="field auto">
+        <label>New strike</label>
+        <select id="r_new_strike"><option value="">-- select expiry --</option></select>
+      </div>
+    </div>
+
+    <div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr));margin-bottom:1.25rem;">
+      <div class="metric"><div class="mlabel">New STO premium</div><div class="mval" id="r_new_prem">—</div></div>
+      <div class="metric"><div class="mlabel">Δ Strike</div><div class="mval" id="r_delta_strike">—</div></div>
+      <div class="metric" id="r_card_delta_prem"><div class="mlabel">Δ Premium value</div><div class="mval" id="r_delta_prem">—</div></div>
+      <div class="metric" id="r_card_net_prem"><div class="mlabel">Net premium</div><div class="mval" id="r_net_prem">—</div></div>
+      <div class="metric" id="r_card_total_prem"><div class="mlabel">Total premium ($)</div><div class="mval" id="r_total_prem">—</div></div>
+    </div>
+
+    <hr />
+
+    <div class="section-label">Stock basis</div>
+    <div class="inputs-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="field">
+        <label>Owned stock at ($)</label>
+        <input type="number" id="r_owned" placeholder="0.00" step="0.01" min="0" />
+      </div>
+      <div class="field auto">
+        <label>Effective cost basis</label>
+        <input type="text" id="r_eff_cost" readonly style="color:#cc9900;border-color:#ffcc0022;" />
+      </div>
+    </div>
+
+    <div class="metrics" style="grid-template-columns:1fr 1fr 1fr;">
+      <div class="metric" id="r_card_pife_ps"><div class="mlabel">Profit if exercised / share</div><div class="mval" id="r_pife_ps">—</div></div>
+      <div class="metric" id="r_card_pife_total"><div class="mlabel">Total profit if exercised</div><div class="mval" id="r_pife_total">—</div></div>
+      <div class="metric"><div class="mlabel">New strike × shares</div><div class="mval" id="r_strike_value">—</div></div>
+    </div>
+
+  </div><!-- /tab2 -->
+
+  <div class="dos-footer">  <div class="dos-footer">
     F1=HELP &nbsp; F5=REFRESH &nbsp; F10=EXIT &nbsp;&nbsp;&nbsp; DATA DELAYED 15 MIN &nbsp;&nbsp;&nbsp; (C) 1987 CVP TRADE SYSTEMS INC.
   </div>
 
 </div>
 <script>
-var chart1inst = null, chart2inst = null;
+var chart1inst = null, chart2inst = null, priceChartInst = null;
 var currentPrice = 0, chainCache = {};
 var API = '';
 var isTyping = false;
@@ -426,6 +527,63 @@ function makeChartOptions(yCallback) {
       }
     }
   };
+}
+
+function drawPriceChart(dates, closes) {
+  var ctx = document.getElementById('priceChart').getContext('2d');
+  if (priceChartInst) { priceChartInst.destroy(); priceChartInst = null; }
+
+  // Compute min/max for a tight y-axis
+  var minClose = Math.min.apply(null, closes);
+  var maxClose = Math.max.apply(null, closes);
+  var pad = (maxClose - minClose) * 0.1 || 0.5;
+
+  // Color the line green if up, red if down
+  var lineColor = closes[closes.length - 1] >= closes[0] ? '#aacc00' : '#ff4400';
+  var fillColor = closes[closes.length - 1] >= closes[0] ? 'rgba(170,204,0,0.07)' : 'rgba(255,68,0,0.07)';
+
+  priceChartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [{
+        data: closes,
+        borderColor: lineColor,
+        backgroundColor: fillColor,
+        borderWidth: 2, pointRadius: 0, tension: 0.3, fill: true
+      }]
+    },
+    options: {
+      responsive: true, animation: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0a0800',
+          borderColor: 'rgba(255,204,0,0.3)',
+          borderWidth: 1,
+          titleColor: '#886600',
+          bodyColor: '#ffcc00',
+          callbacks: {
+            label: function(c) { return '  $' + c.raw.toFixed(2); }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { maxTicksLimit: 6, color: '#664d00', font: { family: "'IBM Plex Mono', monospace", size: 10 } },
+          grid: { color: 'rgba(255,204,0,0.06)' },
+          border: { color: 'rgba(255,204,0,0.2)' }
+        },
+        y: {
+          min: minClose - pad,
+          max: maxClose + pad,
+          ticks: { color: '#664d00', font: { family: "'IBM Plex Mono', monospace", size: 10 }, callback: function(v) { return '$' + v.toFixed(2); } },
+          grid: { color: 'rgba(255,204,0,0.06)' },
+          border: { color: 'rgba(255,204,0,0.2)' }
+        }
+      }
+    }
+  });
 }
 
 function drawCharts(premium, shares, totalDays) {
@@ -578,6 +736,16 @@ async function fetchAll() {
     document.getElementById('chainSection').style.display = 'block';
     document.getElementById('resultsSection').style.display = 'block';
 
+    // Load 3-month price history
+    try {
+      var hist = await apiFetch('/history/' + ticker);
+      if (hist.dates && hist.closes) {
+        document.getElementById('priceChartLabel').textContent = ticker;
+        document.getElementById('priceChartSection').style.display = 'block';
+        drawPriceChart(hist.dates, hist.closes);
+      }
+    } catch(e) { /* chart is optional, don't block on failure */ }
+
     if (dates.length) {
       document.getElementById('chainStatus').textContent = 'LOADING...';
       var firstChain = await apiFetch('/chain/' + ticker + '/' + dates[0]);
@@ -599,6 +767,204 @@ document.getElementById('ticker').addEventListener('keydown', function(e) { if (
 document.getElementById('expirySelect').addEventListener('change', loadChain);
 ['price','strike','premium','contracts','expiry'].forEach(function(id) {
   document.getElementById(id).addEventListener('input', function() { calc(false); });
+});
+
+// ── TAB SWITCHING ──────────────────────────────────────────
+function switchTab(id) {
+  document.getElementById('tab1').style.display = id === 'tab1' ? 'block' : 'none';
+  document.getElementById('tab2').style.display = id === 'tab2' ? 'block' : 'none';
+  document.querySelectorAll('.tab-btn').forEach(function(b, i) {
+    b.classList.toggle('active', (i === 0 && id === 'tab1') || (i === 1 && id === 'tab2'));
+  });
+}
+
+// ── ROLL-OUT SIMULATOR ─────────────────────────────────────
+var rollChainCache = {};
+var rollCurrentPrice = 0;
+
+function r_fmt(n, d) { return '$' + Number(n).toFixed(d !== undefined ? d : 2); }
+function r_fmtDiff(n) { return (n >= 0 ? '+' : '') + '$' + Math.abs(n).toFixed(2); }
+
+function r_setStatus(msg) { document.getElementById('r_status').textContent = msg; }
+
+function r_calcAll() {
+  var contracts  = parseInt(document.getElementById('r_contracts').value) || 0;
+  var shares     = contracts * 100;
+  var sto        = parseFloat(document.getElementById('r_sto').value) || 0;
+  var owned      = parseFloat(document.getElementById('r_owned').value) || 0;
+  var curStrike  = parseFloat(document.getElementById('r_cur_strike').value) || 0;
+  var newStrike  = parseFloat(document.getElementById('r_new_strike').value) || 0;
+  var newPrem    = parseFloat(document.getElementById('r_new_prem_raw') && document.getElementById('r_new_prem_raw').value) || 0;
+
+  document.getElementById('r_shares').textContent = shares.toLocaleString() + ' shares';
+
+  // Cost to cover = current contract's last price (from chain selection)
+  var costToCover = parseFloat(document.getElementById('r_cost_to_cover_raw') ? document.getElementById('r_cost_to_cover_raw').value : 0) || 0;
+  var deficit     = costToCover - sto;  // positive = costs more to cover than received
+  document.getElementById('r_cost_to_cover').textContent = costToCover ? r_fmt(costToCover) : '—';
+  document.getElementById('r_deficit').textContent       = costToCover ? r_fmtDiff(-deficit) : '—';
+  document.getElementById('r_card_deficit').className    = 'metric' + (deficit > 0 ? ' loss' : deficit < 0 ? ' highlight' : '');
+
+  // Delta strike
+  var deltaStrike = newStrike - curStrike;
+  document.getElementById('r_delta_strike').textContent = newStrike && curStrike ? r_fmtDiff(deltaStrike) : '—';
+
+  // Delta premium value = new premium - cost to cover
+  var deltaPrem = newPrem - costToCover;
+  document.getElementById('r_delta_prem').textContent = newPrem ? r_fmtDiff(deltaPrem) : '—';
+  document.getElementById('r_card_delta_prem').className = 'metric' + (deltaPrem >= 0 ? ' highlight' : ' loss');
+
+  // Net premium = original STO + delta prem
+  var netPrem = sto + deltaPrem;
+  document.getElementById('r_net_prem').textContent = newPrem ? r_fmt(netPrem) : '—';
+  document.getElementById('r_card_net_prem').className = 'metric' + (netPrem >= 0 ? ' highlight' : ' loss');
+
+  // Total premium = net premium * shares
+  var totalPrem = netPrem * shares;
+  document.getElementById('r_total_prem').textContent = newPrem ? r_fmt(totalPrem, 0) : '—';
+  document.getElementById('r_card_total_prem').className = 'metric' + (totalPrem >= 0 ? ' highlight' : ' loss');
+
+  // New strike × shares
+  document.getElementById('r_strike_value').textContent = newStrike ? r_fmt(newStrike * shares, 0) : '—';
+
+  // Stock basis
+  if (owned > 0) {
+    var effCost = owned - (totalPrem / shares || 0);
+    document.getElementById('r_eff_cost').value = r_fmt(effCost);
+
+    var pifePS    = newStrike - effCost;
+    var pifeTotal = pifePS * shares;
+    document.getElementById('r_pife_ps').textContent    = r_fmt(pifePS);
+    document.getElementById('r_pife_total').textContent = r_fmt(pifeTotal, 0);
+    document.getElementById('r_card_pife_ps').className    = 'metric' + (pifePS >= 0 ? ' highlight' : ' loss');
+    document.getElementById('r_card_pife_total').className = 'metric' + (pifeTotal >= 0 ? ' highlight' : ' loss');
+  } else {
+    document.getElementById('r_eff_cost').value = '';
+    document.getElementById('r_pife_ps').textContent    = '—';
+    document.getElementById('r_pife_total').textContent = '—';
+    document.getElementById('r_card_pife_ps').className    = 'metric';
+    document.getElementById('r_card_pife_total').className = 'metric';
+  }
+}
+
+// Hidden inputs to store raw numeric values from chain selections
+function r_ensureHidden(id) {
+  if (!document.getElementById(id)) {
+    var inp = document.createElement('input');
+    inp.type = 'hidden'; inp.id = id;
+    document.body.appendChild(inp);
+  }
+}
+
+async function r_loadCurStrikes() {
+  var expiry = document.getElementById('r_cur_expiry').value;
+  var ticker = document.getElementById('r_ticker').value.trim().toUpperCase();
+  if (!expiry || !ticker) return;
+  document.getElementById('r_cur_strike').innerHTML = '<option value="">LOADING...</option>';
+
+  var calls = rollChainCache[expiry];
+  if (!calls) {
+    try {
+      var data = await apiFetch('/chain/' + ticker + '/' + expiry);
+      rollChainCache[expiry] = data.calls;
+      calls = data.calls;
+    } catch(e) { document.getElementById('r_cur_strike').innerHTML = '<option value="">ERROR</option>'; return; }
+  }
+
+  var sel = document.getElementById('r_cur_strike');
+  sel.innerHTML = '<option value="">-- select --</option>';
+  calls.forEach(function(c) {
+    var opt = document.createElement('option');
+    opt.value = c.strike;
+    opt.dataset.last = c.lastPrice || 0;
+    opt.textContent = '$' + c.strike.toFixed(2) + '  [last: $' + (c.lastPrice||0).toFixed(2) + ']';
+    sel.appendChild(opt);
+  });
+}
+
+async function r_loadNewStrikes() {
+  var expiry = document.getElementById('r_new_expiry').value;
+  var ticker = document.getElementById('r_ticker').value.trim().toUpperCase();
+  if (!expiry || !ticker) return;
+  document.getElementById('r_new_strike').innerHTML = '<option value="">LOADING...</option>';
+
+  var calls = rollChainCache[expiry];
+  if (!calls) {
+    try {
+      var data = await apiFetch('/chain/' + ticker + '/' + expiry);
+      rollChainCache[expiry] = data.calls;
+      calls = data.calls;
+    } catch(e) { document.getElementById('r_new_strike').innerHTML = '<option value="">ERROR</option>'; return; }
+  }
+
+  var sel = document.getElementById('r_new_strike');
+  sel.innerHTML = '<option value="">-- select --</option>';
+  calls.forEach(function(c) {
+    var opt = document.createElement('option');
+    opt.value = c.strike;
+    opt.dataset.last = c.lastPrice || 0;
+    opt.textContent = '$' + c.strike.toFixed(2) + '  [last: $' + (c.lastPrice||0).toFixed(2) + ']';
+    sel.appendChild(opt);
+  });
+}
+
+async function r_loadChain() {
+  var ticker = document.getElementById('r_ticker').value.trim().toUpperCase();
+  if (!ticker) return;
+  r_setStatus('LOADING...');
+  rollChainCache = {};
+
+  try {
+    var chain = await apiFetch('/chain/' + ticker);
+    var dates = chain.expirations || [];
+
+    ['r_cur_expiry','r_new_expiry'].forEach(function(selId) {
+      var sel = document.getElementById(selId);
+      sel.innerHTML = '<option value="">-- select --</option>';
+      dates.forEach(function(d) {
+        var opt = document.createElement('option');
+        opt.value = d;
+        var parts = d.split('-');
+        var dt = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+        opt.textContent = dt.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}).toUpperCase();
+        sel.appendChild(opt);
+      });
+    });
+    r_setStatus(dates.length + ' EXPIRIES LOADED');
+  } catch(e) {
+    r_setStatus('ERROR: ' + e.message);
+  }
+}
+
+// Wire up hidden raw value fields
+r_ensureHidden('r_cost_to_cover_raw');
+r_ensureHidden('r_new_prem_raw');
+
+document.getElementById('r_loadBtn').addEventListener('click', r_loadChain);
+document.getElementById('r_ticker').addEventListener('keydown', function(e) { if (e.key === 'Enter') r_loadChain(); });
+
+document.getElementById('r_cur_expiry').addEventListener('change', r_loadCurStrikes);
+document.getElementById('r_new_expiry').addEventListener('change', r_loadNewStrikes);
+
+document.getElementById('r_cur_strike').addEventListener('change', function() {
+  var sel = this;
+  var opt = sel.options[sel.selectedIndex];
+  var last = opt ? parseFloat(opt.dataset.last || 0) : 0;
+  document.getElementById('r_cost_to_cover_raw').value = last;
+  r_calcAll();
+});
+
+document.getElementById('r_new_strike').addEventListener('change', function() {
+  var sel = this;
+  var opt = sel.options[sel.selectedIndex];
+  var last = opt ? parseFloat(opt.dataset.last || 0) : 0;
+  document.getElementById('r_new_prem_raw').value = last;
+  document.getElementById('r_new_prem').textContent = last ? r_fmt(last) : '—';
+  r_calcAll();
+});
+
+['r_contracts','r_sto','r_owned'].forEach(function(id) {
+  document.getElementById(id).addEventListener('input', r_calcAll);
 });
 </script>
 </body>
