@@ -326,7 +326,7 @@
 <div class="card">
   <div class="header">
     <h1>Call Option Analyzer</h1>
-    <span class="header-sub">Covered Call</span>
+    <span class="header-sub">covered call</span>
   </div>
 
 
@@ -472,7 +472,7 @@ function drawChart(price, strike, premium, shares) {
   var labels = [], data = [], dollarData = [];
   var pts = Math.min(totalDays, 120);
   for (var i = 0; i <= pts; i++) {
-    var daysLeft = totalDays - Math.round(i * totalDays / pts);
+    var daysLeft = Math.round((pts - i) * totalDays / pts);
     labels.push(daysLeft + 'd');
     // Time value decays as sqrt(T) — standard options approximation
     var timeValue = premium * Math.sqrt(daysLeft / totalDays);
@@ -534,7 +534,6 @@ function drawChart(price, strike, premium, shares) {
       },
       scales: {
         x: {
-          reverse: true,
           title: { display: true, text: 'Days to expiry', color: '#484f58', font: { size: 10 } },
           ticks: { maxTicksLimit: 8, color: '#484f58', font: { family: "'JetBrains Mono', monospace", size: 10 } },
           grid: { color: 'rgba(240,246,252,0.06)' },
@@ -548,6 +547,7 @@ function drawChart(price, strike, premium, shares) {
           border: { color: 'rgba(240,246,252,0.1)' }
         },
         y2: {
+          display: true,
           position: 'right',
           title: { display: true, text: 'Total $', color: '#484f58', font: { size: 10 } },
           ticks: { color: '#484f58', font: { family: "'JetBrains Mono', monospace", size: 10 }, callback: function(v) { return '$' + v.toLocaleString(); } },
