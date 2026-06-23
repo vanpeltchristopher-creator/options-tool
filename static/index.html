@@ -244,18 +244,10 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
       <div class="metric"><div class="mlabel">Days to exp</div><div class="mval" id="mDTE"></div></div>
     </div>
 
-    <div class="section-label">Yield</div>
-    <div class="metrics">
-      <div class="metric"><div class="mlabel">% prem/price</div><div class="mval" id="mPremPct"></div></div>
-      <div class="metric"><div class="mlabel">% prem/strike</div><div class="mval" id="mPremStrike"></div></div>
-      <div class="metric"><div class="mlabel">Annualized yield</div><div class="mval" id="mAnnual"></div></div>
-      <div class="metric" id="cardPct"><div class="mlabel">% profit at X</div><div class="mval" id="mPct"></div></div>
-    </div>
-
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.25rem;">
 
       <div>
-        <div class="section-label">Scenario A — called away</div>
+        <div class="section-label">Yield — called away</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
           <div class="metric" id="cardCalledTotal"><div class="mlabel">Total P&amp;L</div><div class="mval" id="mCalledTotal"></div></div>
           <div class="metric" id="cardCalledPS"><div class="mlabel">Per share</div><div class="mval" id="mCalledPS"></div></div>
@@ -265,7 +257,7 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
       </div>
 
       <div>
-        <div class="section-label">Scenario B — expires worthless</div>
+        <div class="section-label">Yield — expired worthless</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
           <div class="metric" id="cardExpiresTotal"><div class="mlabel">Total P&amp;L</div><div class="mval" id="mExpiresTotal"></div></div>
           <div class="metric" id="cardExpiresPS"><div class="mlabel">Per share</div><div class="mval" id="mExpiresPS"></div></div>
@@ -364,9 +356,6 @@ function calc(animate) {
   var expiresPct = capital ? (expiresT / capital) * 100 : 0;
   var expiresAnn = dteNum > 0 ? (expiresPct * 365 / dteNum) : 0;
 
-  // Yield section annualized (based on premium only, for comparison)
-  var annualYield = dteNum > 0 ? (premPctPrice * 365 / dteNum) : 0;
-
   function colorCard(id, val) {
     document.getElementById(id).className = 'metric' + (val > 0 ? ' highlight' : val < 0 ? ' loss' : '');
   }
@@ -378,18 +367,12 @@ function calc(animate) {
   document.getElementById('cardExpiresPS').className    = 'metric highlight';
   document.getElementById('cardExpiresPct').className   = 'metric highlight';
   document.getElementById('cardExpiresAnn').className   = 'metric highlight';
-  document.getElementById('cardPct').className = 'metric' + (calledPct > 0 ? ' highlight' : calledPct < 0 ? ' loss' : '');
-
   var metrics = [
     { id: 'mCapital',      value: fmt(capital, 0) },
     { id: 'mPrem',         value: fmt(dollarPrem, 0) },
     { id: 'mBE',           value: fmt(effCost) },
     { id: 'mOTM',          value: fmt(otm) },
     { id: 'mDTE',          value: dte },
-    { id: 'mPremPct',      value: fmtPct(premPctPrice) },
-    { id: 'mPremStrike',   value: fmtPct(premPctStrike) },
-    { id: 'mAnnual',       value: fmtPct(annualYield) },
-    { id: 'mPct',          value: fmtPct(calledPct) },
     { id: 'mCalledTotal',  value: fmt(calledT, 0) },
     { id: 'mCalledPS',     value: fmt(calledPS) },
     { id: 'mCalledPct',    value: fmtPct(calledPct) },
