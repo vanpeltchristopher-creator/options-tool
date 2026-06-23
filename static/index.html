@@ -326,7 +326,7 @@
 <div class="card">
   <div class="header">
     <h1>Call Option Analyzer</h1>
-    <span class="header-sub">covered call</span>
+    <span class="header-sub">Covered Call</span>
   </div>
 
 
@@ -379,7 +379,7 @@
   <div class="metrics">
     <div class="metric"><div class="mlabel">Capital</div><div class="mval" id="mCapital">—</div></div>
     <div class="metric"><div class="mlabel">$$$ Premium</div><div class="mval" id="mPrem">—</div></div>
-    <div class="metric"><div class="mlabel">Eff. cost</div><div class="mval" id="mEff">—</div></div>
+    <div class="metric"><div class="mlabel">Monthly return</div><div class="mval" id="mMonthly">—</div></div>
     <div class="metric"><div class="mlabel">Breakeven</div><div class="mval" id="mBE">—</div></div>
     <div class="metric"><div class="mlabel">Strike OTM</div><div class="mval" id="mOTM">—</div></div>
     <div class="metric"><div class="mlabel">% prem/price</div><div class="mval" id="mPremPct">—</div></div>
@@ -394,7 +394,7 @@
     <div class="metric" id="cardPct"><div class="mlabel">% profit</div><div class="mval" id="mPct">—</div></div>
   </div>
 
-  <div class="section-label">Payoff at expiry</div>
+  <div class="section-label">Option value decay (theta)</div>
   <canvas id="payoffChart" height="180"></canvas>
 </div>
 
@@ -436,10 +436,11 @@ function calc() {
 
   document.getElementById('mCapital').textContent    = fmt(capital, 0);
   document.getElementById('mPrem').textContent       = fmt(dollarPrem, 0);
-  document.getElementById('mEff').textContent        = fmt(effCost);
   document.getElementById('mOTM').textContent        = fmt(otm);
   document.getElementById('mPremPct').textContent    = fmtPct(premPctPrice);
   document.getElementById('mPremStrike').textContent = fmtPct(premPctStrike);
+  var monthlyReturn = (dte && dte !== '—') ? (premPctPrice / parseInt(dte)) * 30 : 0;
+  document.getElementById('mMonthly').textContent    = fmtPct(monthlyReturn);
   document.getElementById('mBE').textContent         = fmt(effCost);
   document.getElementById('mDTE').textContent        = dte;
 
@@ -457,32 +458,65 @@ function calc() {
 }
 
 function drawChart(price, strike, premium, shares) {
-  var lo = Math.max(0, strike * 0.65), hi = strike * 1.5, pts = 100;
-  var labels = [], data = [];
-  for (var i = 0; i <= pts; i++) {
-    var x = lo + (hi - lo) * i / pts;
-    labels.push('$' + x.toFixed(2));
-    data.push(parseFloat(((premium + Math.min(x, strike) - price) * shares).toFixed(2)));
+  // Theta decay using simplified Black-Scholes time value approximation
+  // Option value decays non-linearly - accelerates near expiry
+  var dteVal = document.getElementById('expiry').value;
+  var ep = dteVal.split('-');
+  var totalDays = 30; // fallback
+  if (ep.length === 3) {
+    var expDate = new Date(parseInt(ep[0]), parseInt(ep[1]) - 1, parseInt(ep[2]));
+    var today = new Date(); today.setHours(0,0,0,0);
+    totalDays = Math.max(1, Math.ceil((expDate - today) / 86400000));
   }
+
+  var labels = [], data = [], dollarData = [];
+  var pts = Math.min(totalDays, 120);
+  for (var i = 0; i <= pts; i++) {
+    var daysLeft = totalDays - Math.round(i * totalDays / pts);
+    labels.push(daysLeft + 'd');
+    // Time value decays as sqrt(T) — standard options approximation
+    var timeValue = premium * Math.sqrt(daysLeft / totalDays);
+    data.push(parseFloat(timeValue.toFixed(4)));
+    dollarData.push(parseFloat((timeValue * shares).toFixed(2)));
+  }
+
   var ctx = document.getElementById('payoffChart').getContext('2d');
   if (chart) chart.destroy();
   chart = new Chart(ctx, {
     type: 'line',
-    data: { labels: labels, datasets: [{
-      data: data,
-      segment: { borderColor: function(c) { return c.p0.parsed.y >= 0 ? '#3fb950' : '#f85149'; } },
-      backgroundColor: function(ctx2) {
-        var g = ctx2.chart.ctx.createLinearGradient(0, 0, 0, 200);
-        g.addColorStop(0, 'rgba(63,185,80,0.08)');
-        g.addColorStop(1, 'rgba(63,185,80,0)');
-        return g;
+    data: { labels: labels, datasets: [
+      {
+        label: 'Option value / share',
+        data: data,
+        borderColor: '#58a6ff',
+        backgroundColor: function(ctx2) {
+          var g = ctx2.chart.ctx.createLinearGradient(0, 0, 0, 200);
+          g.addColorStop(0, 'rgba(88,166,255,0.15)');
+          g.addColorStop(1, 'rgba(88,166,255,0)');
+          return g;
+        },
+        borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true,
+        yAxisID: 'y'
       },
-      borderWidth: 2, pointRadius: 0, tension: 0.3, fill: true
-    }]},
+      {
+        label: 'Total $ value',
+        data: dollarData,
+        borderColor: '#3fb950',
+        borderWidth: 1.5,
+        borderDash: [4, 3],
+        pointRadius: 0,
+        tension: 0.4,
+        fill: false,
+        yAxisID: 'y2'
+      }
+    ]},
     options: {
       responsive: true, animation: false,
       plugins: {
-        legend: { display: false },
+        legend: {
+          display: true,
+          labels: { color: '#8b949e', font: { family: "'JetBrains Mono', monospace", size: 10 }, boxWidth: 12 }
+        },
         tooltip: {
           backgroundColor: '#161b22',
           borderColor: 'rgba(240,246,252,0.1)',
@@ -490,20 +524,34 @@ function drawChart(price, strike, premium, shares) {
           titleColor: '#8b949e',
           bodyColor: '#e6edf3',
           callbacks: {
-            label: function(c) { return ' P&L: ' + fmt(c.raw, 0); },
-            title: function(l) { return 'Price: ' + l[0]; }
+            title: function(l) { return 'Days remaining: ' + l[0].label; },
+            label: function(c) {
+              if (c.datasetIndex === 0) return '  Per share: $' + c.raw.toFixed(2);
+              return '  Total: $' + c.raw.toLocaleString();
+            }
           }
         }
       },
       scales: {
         x: {
-          ticks: { maxTicksLimit: 7, color: '#484f58', font: { family: "'JetBrains Mono', monospace", size: 10 } },
+          reverse: true,
+          title: { display: true, text: 'Days to expiry', color: '#484f58', font: { size: 10 } },
+          ticks: { maxTicksLimit: 8, color: '#484f58', font: { family: "'JetBrains Mono', monospace", size: 10 } },
           grid: { color: 'rgba(240,246,252,0.06)' },
           border: { color: 'rgba(240,246,252,0.1)' }
         },
         y: {
-          ticks: { color: '#484f58', font: { family: "'JetBrains Mono', monospace", size: 10 }, callback: function(v) { return '$' + v.toLocaleString(); } },
+          position: 'left',
+          title: { display: true, text: '$/share', color: '#484f58', font: { size: 10 } },
+          ticks: { color: '#484f58', font: { family: "'JetBrains Mono', monospace", size: 10 }, callback: function(v) { return '$' + v.toFixed(2); } },
           grid: { color: 'rgba(240,246,252,0.06)' },
+          border: { color: 'rgba(240,246,252,0.1)' }
+        },
+        y2: {
+          position: 'right',
+          title: { display: true, text: 'Total $', color: '#484f58', font: { size: 10 } },
+          ticks: { color: '#484f58', font: { family: "'JetBrains Mono', monospace", size: 10 }, callback: function(v) { return '$' + v.toLocaleString(); } },
+          grid: { drawOnChartArea: false },
           border: { color: 'rgba(240,246,252,0.1)' }
         }
       }
