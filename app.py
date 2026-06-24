@@ -116,6 +116,7 @@ def history(ticker):
 @app.route('/peers/<ticker>')
 def peers(ticker):
     try:
+        import requests as req
         t = yf.Ticker(ticker.upper())
         info = t.info
         sector   = info.get('sector', '')
@@ -125,12 +126,15 @@ def peers(ticker):
         if not sector and not industry:
             return jsonify({'error': 'No sector data for ' + ticker, 'peers': []}), 200
 
-        # Use yfinance screener to find peers in same industry
-        screener = yf.Screener()
-        screener.set_predefined_body('most_actives')
-        body = {
+        # Use Yahoo Finance screener API directly
+        url = 'https://query1.finance.yahoo.com/v1/finance/screener'
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Content-Type': 'application/json',
+        }
+        payload = {
             'offset': 0,
-            'size': 100,
+            'size': 30,
             'sortField': 'marketcap',
             'sortType': 'DESC',
             'quoteType': 'EQUITY',
@@ -140,11 +144,13 @@ def peers(ticker):
                     {'operator': 'EQ', 'operands': ['sector', sector]},
                     {'operator': 'EQ', 'operands': ['industry', industry]},
                 ]
-            }
+            },
+            'userId': '',
+            'userIdType': 'guid'
         }
-        screener.set_body(body)
-        resp = screener.response
-        quotes = resp.get('quotes', [])
+        resp = req.post(url, json=payload, headers=headers, timeout=10)
+        data = resp.json()
+        quotes = data.get('finance', {}).get('result', [{}])[0].get('quotes', [])
 
         peer_list = []
         for q in quotes:
@@ -161,7 +167,6 @@ def peers(ticker):
                 'marketCap': safe_float(q.get('marketCap')),
             })
 
-        # Sort by market cap descending
         peer_list.sort(key=lambda x: x['marketCap'], reverse=True)
 
         return jsonify({
