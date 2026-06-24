@@ -1160,36 +1160,95 @@ document.getElementById('c_ticker').addEventListener('keydown', function(e) {
 
 // ── PEER FINDER ────────────────────────────────────────────
 var SECTOR_MAP = {
+  // Tech — Big Cap
+  'Big Tech':                   ['AAPL','MSFT','GOOGL','GOOG','META','AMZN','NVDA','TSLA','ORCL','IBM','ADBE','CRM','INTC','CSCO','TXN','QCOM','HPQ','HPE','DELL','ACN'],
+  'Consumer Electronics':       ['AAPL','SONY','SAMSF','MSI','LOGI','HEAR','KOSS','GPRO','VOXX','VZIO'],
+  'Enterprise Software':        ['MSFT','CRM','SAP','ORCL','NOW','WDAY','TEAM','ZM','DDOG','MDB','ESTC','SPLK','VEEV'],
+  'Cloud Computing':            ['AMZN','MSFT','GOOGL','ORCL','CRM','SNOW','DDOG','NET','FSLY','CFLT','GTLB'],
+  'Cybersecurity':              ['CRWD','PANW','FTNT','ZS','OKTA','S','QLYS','TENB','VRNS','CYBR','HACK'],
+  'IT Services / Legacy Tech':  ['IBM','ACN','CTSH','WIT','INFY','HCL','EPAM','GLOB','LDOS','SAIC','CACI'],
+
+  // Semiconductors
+  'Semiconductors':             ['NVDA','AMD','INTC','QCOM','MU','AVGO','MRVL','AMAT','LRCX','KLAC','SMCI','ARM','ASML','TSM','ON','SWKS','MPWR','ENTG'],
+  'Semiconductor Equipment':    ['AMAT','LRCX','KLAC','ONTO','ACMR','CAMT','ICHR','MKSI','ENTG','UCTT'],
+
+  // AI
+  'AI / Machine Learning':      ['NVDA','MSFT','GOOGL','META','AMZN','PLTR','AI','BBAI','SOUN','KOPN','BIGB','RBRK','AMBA'],
+
+  // EV & Auto
+  'EV / Electric Vehicles':     ['TSLA','RIVN','LCID','NIO','XPEV','LI','FSR','GOEV','AYRO','GM','F','STLA','TM','HMC'],
+  'EV Charging':                ['CHPT','BLNK','EVGO','VLTA','WAVE','AMPE'],
+  'Auto / Traditional':         ['GM','F','STLA','TM','HMC','NSANY','FCAU','BWA','LEA','MGA','ALV'],
+  'Auto Parts':                 ['APH','BWA','LEA','MGA','ALV','GT','SUP','DAN','SMP','THRM'],
+
+  // eVTOL / Aerospace
   'eVTOL / Urban Air Mobility': ['JOBY','ACHR','EVTL','LILM','BETA','EHAV','STVN'],
-  'Mining / Precious Metals':   ['NAK','NEM','GOLD','AEM','KGC','HL','PAAS','CDE','EXK','AG','WPM','FNV'],
-  'Mining / Copper':            ['FCX','SCCO','HBM','TECK','CS','CPER'],
-  'Mining / Lithium':           ['ALB','SQM','LAC','PLL','LTHM','SGML','LIAC'],
-  'Mining / Silver':            ['AG','PAAS','HL','CDE','EXK','MTA','SILV'],
-  'EV / Electric Vehicles':     ['TSLA','RIVN','LCID','NIO','XPEV','LI','FSR','GOEV','AYRO'],
-  'EV Charging':                ['CHPT','BLNK','EVGO','VLTA','SBE','WAVE'],
-  'Aerospace / Defense':        ['BA','LMT','RTX','NOC','GD','HII','TDG','HEI','KTOS','RKLB','ASTS'],
-  'Space / Satellites':         ['RKLB','ASTS','SPCE','MNTS','BKSY','PL','GILT','GSAT'],
-  'Biotech / Genomics':         ['MRNA','BNTX','NVAX','ARKG','CRSP','EDIT','NTLA','BEAM','PACB','ILMN'],
-  'Biotech / Small Cap':        ['SAVA','AGEN','CYTO','OCGN','NKTR','IMVT','PRAX','IDYA'],
-  'Cannabis':                   ['TLRY','CGC','CURLF','CRON','ACB','SNDL','GTBIF','IIPR'],
-  'Fintech':                    ['SQ','PYPL','AFRM','UPST','SOFI','LC','OPEN','HOOD','COIN'],
-  'Crypto / Blockchain':        ['COIN','MSTR','RIOT','MARA','HUT','BITF','CLSK','BTBT','BTDR'],
-  'Semiconductors':             ['NVDA','AMD','INTC','QCOM','MU','AVGO','MRVL','AMAT','LRCX','KLAC','SMCI','ARM'],
-  'AI / Cloud':                 ['NVDA','MSFT','GOOGL','META','AMZN','ORCL','CRM','SNOW','PLTR','AI','BBAI'],
-  'Solar / Renewable Energy':   ['ENPH','SEDG','FSLR','SPWR','RUN','ARRY','NOVA','CSIQ','JKS'],
-  'Wind / Clean Energy':        ['NEE','BEP','CWEN','AY','ICLN','PLUG','BE','FCEL','BLDP'],
-  'Oil & Gas':                  ['XOM','CVX','COP','OXY','PXD','DVN','HES','MRO','APA','CLR'],
-  'Oil Services':               ['SLB','HAL','BKR','NOV','FTI','LBRT','PUMP','NINE'],
-  'Banks / Financials':         ['JPM','BAC','WFC','C','GS','MS','USB','PNC','TFC','RF','SCHW'],
-  'Insurance':                  ['BRK-B','MET','PRU','AFL','TRV','ALL','CB','PGR','HIG'],
-  'Real Estate / REITs':        ['AMT','PLD','EQIX','SPG','O','VICI','WPC','NNN','STAG'],
-  'Healthcare':                 ['JNJ','UNH','PFE','ABBV','MRK','LLY','BMY','AMGN','GILD'],
-  'Retail':                     ['AMZN','WMT','TGT','COST','HD','LOW','TJX','ROST','DG','DLTR'],
-  'Airlines':                   ['DAL','UAL','AAL','LUV','SAVE','ALK','HA','JBLU','SKYW'],
-  'Cruise / Travel':            ['CCL','RCL','NCLH','HLT','MAR','H','MGM','WYNN','LVS'],
-  'Streaming / Media':          ['NFLX','DIS','WBD','PARA','FOXA','ROKU','SPOT','TTWO','EA'],
-  'Electric Utilities':         ['NEE','DUK','SO','D','AEP','EXC','PCG','XEL','WEC','ED'],
-  'Shipping / Freight':         ['ZIM','DAC','GSL','SB','GOGL','EGLE','SBLK','NMM','GNK'],
+  'Aerospace / Defense':        ['BA','LMT','RTX','NOC','GD','HII','TDG','HEI','KTOS','RKLB','ASTS','HXL','HEICO','TDY'],
+  'Space / Satellites':         ['RKLB','ASTS','SPCE','MNTS','BKSY','PL','GSAT','GILT','ISAT'],
+
+  // Mining
+  'Mining / Precious Metals':   ['NAK','NEM','GOLD','AEM','KGC','HL','PAAS','CDE','EXK','AG','WPM','FNV','OR','RGLD'],
+  'Mining / Copper':            ['FCX','SCCO','HBM','TECK','CS','CPER','COPX'],
+  'Mining / Lithium':           ['ALB','SQM','LAC','PLL','LTHM','SGML','LIAC','ROCK','LIXT'],
+  'Mining / Silver':            ['AG','PAAS','HL','CDE','EXK','MTA','SILV','SILVRF'],
+  'Mining / Iron & Steel':      ['CLF','X','NUE','STLD','CMC','RS','ATI','WOR','ZEUS'],
+  'Mining / Uranium':           ['CCJ','UEC','UUUU','URG','DNN','BQSSF','NXE','PALAF'],
+
+  // Energy
+  'Oil & Gas':                  ['XOM','CVX','COP','OXY','PXD','DVN','HES','MRO','APA','CLR','EOG','FANG','PR'],
+  'Oil Services':               ['SLB','HAL','BKR','NOV','FTI','LBRT','PUMP','NINE','WHD','WTTR'],
+  'Solar / Renewable Energy':   ['ENPH','SEDG','FSLR','SPWR','RUN','ARRY','NOVA','CSIQ','JKS','MAXN'],
+  'Wind / Clean Energy':        ['NEE','BEP','CWEN','AY','PLUG','BE','FCEL','BLDP','GPRE','AMRC'],
+  'Electric Utilities':         ['NEE','DUK','SO','D','AEP','EXC','PCG','XEL','WEC','ED','ETR','EIX'],
+  'Natural Gas':                ['LNG','CQP','AR','EQT','RRC','SWN','CNX','CTRA','CHK','TELL'],
+
+  // Financials
+  'Big Banks':                  ['JPM','BAC','WFC','C','GS','MS','BK','STT','USB','PNC','TFC','RF'],
+  'Regional Banks':             ['SIVB','SBNY','WAL','PACW','BANC','COLB','HBAN','CFG','FHN','ZION','CMA','KEY'],
+  'Investment Banks / Brokers': ['GS','MS','SCHW','IBKR','RJF','SF','LAZ','EVR','MC','PJT'],
+  'Fintech':                    ['SQ','PYPL','AFRM','UPST','SOFI','LC','HOOD','COIN','PAYO','FLYW','BILL'],
+  'Insurance':                  ['BRK-B','MET','PRU','AFL','TRV','ALL','CB','PGR','HIG','L','GL','EG'],
+  'Asset Management':           ['BLK','BX','APO','KKR','CG','ARES','BAM','TROW','IVZ','AMG','WDR'],
+  'Crypto / Blockchain':        ['COIN','MSTR','RIOT','MARA','HUT','BITF','CLSK','BTBT','BTDR','SATO'],
+
+  // Healthcare
+  'Big Pharma':                 ['JNJ','PFE','ABBV','MRK','LLY','BMY','AMGN','GILD','BIIB','REGN','VRTX'],
+  'Biotech / Genomics':         ['MRNA','BNTX','NVAX','CRSP','EDIT','NTLA','BEAM','PACB','ILMN','ARKG'],
+  'Biotech / Small Cap':        ['SAVA','AGEN','CYTO','OCGN','NKTR','IMVT','PRAX','IDYA','ACAD','INVA'],
+  'Medical Devices':            ['MDT','ABT','ISRG','SYK','BSX','EW','ZBH','BDX','BAX','HOLX','NVCR'],
+  'Healthcare Services':        ['UNH','CVS','CI','HUM','CNC','MOH','ELV','HCA','THC','UHS'],
+  'Cannabis':                   ['TLRY','CGC','CURLF','CRON','ACB','SNDL','GTBIF','IIPR','AYRWF','TCNNF'],
+
+  // Consumer
+  'Big Retail':                 ['AMZN','WMT','TGT','COST','HD','LOW','TJX','ROST','DG','DLTR','FIVE','BJ'],
+  'E-Commerce':                 ['AMZN','SHOP','ETSY','EBAY','W','WISH','PRTS','OSTK','BARK','CPNG'],
+  'Luxury / Apparel':           ['LVMUY','CPRI','TPR','RL','PVH','VFC','HBI','UAA','LULU','NKE','SKX'],
+  'Food & Beverage':            ['KO','PEP','MDLZ','GIS','K','CPB','CAG','SJM','MKC','HRL','TSN','KHC'],
+  'Restaurants':                ['MCD','SBUX','CMG','YUM','QSR','DPZ','WING','JACK','WEN','EAT','DRI'],
+  'Consumer Staples':           ['PG','CL','KMB','CHD','CLX','ENR','SPB','COTY','ELF','USFD'],
+
+  // Real Estate
+  'Real Estate / REITs':        ['AMT','PLD','EQIX','SPG','O','VICI','WPC','NNN','STAG','IIPR','CCI','SBAC'],
+  'Homebuilders':               ['DHI','LEN','PHM','TOL','KBH','MDC','MHO','TMHC','LGIH','NVR','IBP'],
+
+  // Media & Entertainment
+  'Streaming / Media':          ['NFLX','DIS','WBD','PARA','FOXA','ROKU','SPOT','TTWO','EA','ATVI','LGF-A'],
+  'Social Media':               ['META','SNAP','PINS','TWTR','RDDT','BMBL','MTCH','IAC','ZETA'],
+  'Gaming':                     ['TTWO','EA','ATVI','RBLX','UNITY','DKNG','PENN','RSI','BETZ','GAMB'],
+
+  // Travel & Leisure
+  'Airlines':                   ['DAL','UAL','AAL','LUV','SAVE','ALK','HA','JBLU','SKYW','ULCC'],
+  'Cruise / Travel':            ['CCL','RCL','NCLH','HLT','MAR','H','MGM','WYNN','LVS','EXPE','BKNG'],
+
+  // Industrials
+  'Shipping / Freight':         ['ZIM','DAC','GSL','SB','GOGL','EGLE','SBLK','NMM','GNK','MATX'],
+  'Logistics':                  ['UPS','FDX','XPO','SAIA','ODFL','WERN','JBHT','CHRW','EXPD','ECHO'],
+  'Industrial Machinery':       ['CAT','DE','EMR','ETN','ROK','PH','IR','AME','ITW','XYL','GNRC'],
+  'Construction':               ['VMC','MLM','EXP','USCR','SUM','BLDR','IBP','TREX','AZEK','BECN'],
+
+  // Telecom
+  'Telecom':                    ['T','VZ','TMUS','LUMN','DISH','ATUS','CCOI','SHEN','USM','TDS'],
+  'Satellite / Telecom':        ['GSAT','VSAT','ViaSat','IRDM','SATS','GILT','MAXR'],
 };
 
 // Custom additions stored per-session
@@ -1271,6 +1330,17 @@ async function p_loadPeers() {
 
   var tbody = document.getElementById('p_tbody');
   tbody.innerHTML = '';
+
+  // Sort fulfilled results by price ascending, keep searched ticker at top
+  var searched = results.find(function(r) { return r.status === 'fulfilled' && r.value.ticker === ticker; });
+  var others = results.filter(function(r) { return !(r.status === 'fulfilled' && r.value.ticker === ticker); });
+  others.sort(function(a, b) {
+    var pa = a.status === 'fulfilled' ? a.value.quote.price : 0;
+    var pb = b.status === 'fulfilled' ? b.value.quote.price : 0;
+    return pa - pb;
+  });
+  if (searched) others.unshift(searched);
+  results = others;
 
   results.forEach(function(r) {
     var tr = document.createElement('tr');
