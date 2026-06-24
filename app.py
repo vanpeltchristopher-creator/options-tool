@@ -116,7 +116,6 @@ def history(ticker):
 @app.route('/peers/<ticker>')
 def peers(ticker):
     try:
-        import requests as req
         t = yf.Ticker(ticker.upper())
         info = t.info
         sector   = info.get('sector', '')
@@ -126,55 +125,87 @@ def peers(ticker):
         if not sector and not industry:
             return jsonify({'error': 'No sector data for ' + ticker, 'peers': []}), 200
 
-        # Use Yahoo Finance screener API directly
-        url = 'https://query1.finance.yahoo.com/v1/finance/screener'
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Content-Type': 'application/json',
-        }
-        payload = {
-            'offset': 0,
-            'size': 30,
-            'sortField': 'marketcap',
-            'sortType': 'DESC',
-            'quoteType': 'EQUITY',
-            'query': {
-                'operator': 'AND',
-                'operands': [
-                    {'operator': 'EQ', 'operands': ['sector', sector]},
-                    {'operator': 'EQ', 'operands': ['industry', industry]},
-                ]
-            },
-            'userId': '',
-            'userIdType': 'guid'
-        }
-        resp = req.post(url, json=payload, headers=headers, timeout=10)
-        data = resp.json()
-        quotes = data.get('finance', {}).get('result', [{}])[0].get('quotes', [])
-
+        # Use yfinance recommendations/similar — most reliable cross-version method
         peer_list = []
-        for q in quotes:
-            sym = q.get('symbol', '')
-            if not sym or sym == ticker.upper():
-                continue
-            peer_list.append({
-                'ticker':    sym,
-                'name':      q.get('longName') or q.get('shortName') or sym,
-                'price':     safe_float(q.get('regularMarketPrice')),
-                'prev':      safe_float(q.get('regularMarketPreviousClose')),
-                'change':    safe_float(q.get('regularMarketChange')),
-                'changePct': safe_float(q.get('regularMarketChangePercent')),
-                'marketCap': safe_float(q.get('marketCap')),
-            })
 
-        peer_list.sort(key=lambda x: x['marketCap'], reverse=True)
+        # Method 1: recommendations (works in most yfinance versions)
+        try:
+            recs = t.recommendations
+            if recs is not None and not recs.empty:
+                syms = recs['symbol'].dropna().unique().tolist() if 'symbol' in recs.columns else []
+                for sym in syms[:20]:
+                    if sym == ticker.upper():
+                        continue
+                    try:
+                        pt = yf.Ticker(sym)
+                        pi = pt.fast_info
+                        peer_list.append({
+                            'ticker':    sym,
+                            'name':      sym,
+                            'price':     safe_float(getattr(pi, 'last_price', 0)),
+                            'prev':      safe_float(getattr(pi, 'previous_close', 0)),
+                            'change':    safe_float(getattr(pi, 'last_price', 0)) - safe_float(getattr(pi, 'previous_close', 0)),
+                            'changePct': 0,
+                            'marketCap': safe_float(getattr(pi, 'market_cap', 0)),
+                        })
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+
+        # Method 2: fallback — use Yahoo Finance quote summary similarSecurities
+        if not peer_list:
+            try:
+                import requests as req
+                url = f'https://query2.finance.yahoo.com/v10/finance/quoteSummary/{ticker.upper()}?modules=recommendationTrend,financialData'
+                headers = {'User-Agent': 'Mozilla/5.0'}
+                r = req.get(url, headers=headers, timeout=8)
+                data = r.json()
+                result = (data.get('quoteSummary') or {}).get('result') or []
+                if result:
+                    # Try to get peers from a different endpoint
+                    url2 = f'https://query1.finance.yahoo.com/v6/finance/recommendationsbysymbol/{ticker.upper()}'
+                    r2 = req.get(url2, headers=headers, timeout=8)
+                    d2 = r2.json()
+                    finance = (d2.get('finance') or {})
+                    results = finance.get('result') or []
+                    for item in results:
+                        for rec in (item.get('recommendedSymbols') or []):
+                            sym = rec.get('symbol', '')
+                            if not sym or sym == ticker.upper():
+                                continue
+                            peer_list.append({
+                                'ticker': sym, 'name': sym,
+                                'price': 0, 'prev': 0, 'change': 0, 'changePct': 0, 'marketCap': 0,
+                            })
+            except Exception:
+                pass
+
+        # Enrich peer_list with quotes if prices are missing
+        enriched = []
+        for p in peer_list[:20]:
+            if p['price'] == 0:
+                try:
+                    pi = yf.Ticker(p['ticker']).fast_info
+                    price = safe_float(getattr(pi, 'last_price', 0))
+                    prev  = safe_float(getattr(pi, 'previous_close', 0))
+                    p['price']     = price
+                    p['prev']      = prev
+                    p['change']    = price - prev
+                    p['changePct'] = ((price - prev) / prev * 100) if prev else 0
+                    p['marketCap'] = safe_float(getattr(pi, 'market_cap', 0))
+                except Exception:
+                    pass
+            enriched.append(p)
+
+        enriched.sort(key=lambda x: x['marketCap'], reverse=True)
 
         return jsonify({
             'ticker':   ticker.upper(),
             'name':     name,
             'sector':   sector,
             'industry': industry,
-            'peers':    peer_list[:25]
+            'peers':    enriched[:20]
         })
     except Exception as e:
         return jsonify({'error': str(e), 'peers': []}), 500
