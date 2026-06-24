@@ -187,14 +187,14 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
 
   <!-- TAB NAV -->
   <div class="tab-nav">
-    <button class="tab-btn active" onclick="switchTab('tab1')">[ COVERED CALL ANALYZER ]</button>
+    <button class="tab-btn active" onclick="switchTab('tab1')">[ ANALYZER ]</button>
     <button class="tab-btn" onclick="switchTab('tab2')">[ ROLL-OUT SIMULATOR ]</button>
   </div>
 
   <div id="tab1">
   <div class="dos-header">
     <span class="dos-title">C:\TRADING\OPTIONS.EXE&nbsp;&nbsp;VER 1.0</span>
-    <span class="dos-sub">// OPTION ANALYZER</span>
+    <span class="dos-sub">// COVERED CALL ANALYZER</span>
     <div class="dos-cursor"></div>
   </div>
 
@@ -313,14 +313,18 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
         <input type="number" id="r_contracts" value="10" min="1" step="1" />
       </div>
       <div class="field">
-        <label>Current STO premium ($) (enter original premium value) </label>
+        <label>Current STO premium ($)</label>
         <input type="number" id="r_sto" placeholder="0.00" step="0.01" min="0" />
       </div>
     </div>
-    <div class="inputs-grid" style="grid-template-columns:1fr 1fr;">
+    <div class="inputs-grid" style="grid-template-columns:1fr 1fr 1fr;">
       <div class="field auto">
         <label>Current expiry</label>
         <select id="r_cur_expiry"><option value="">-- load ticker first --</option></select>
+      </div>
+      <div class="field auto">
+        <label>Days to expiry</label>
+        <input type="text" id="r_cur_dte" readonly style="color:#cc9900;border-color:#ffcc0022;" />
       </div>
       <div class="field auto">
         <label>Current strike</label>
@@ -337,10 +341,14 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
     <hr />
 
     <div class="section-label">Roll-out target</div>
-    <div class="inputs-grid" style="grid-template-columns:1fr 1fr;">
+    <div class="inputs-grid" style="grid-template-columns:1fr 1fr 1fr;">
       <div class="field auto">
         <label>New expiry</label>
         <select id="r_new_expiry"><option value="">-- load chain first --</option></select>
+      </div>
+      <div class="field auto">
+        <label>Days to expiry</label>
+        <input type="text" id="r_new_dte" readonly style="color:#cc9900;border-color:#ffcc0022;" />
       </div>
       <div class="field auto">
         <label>New strike</label>
@@ -960,8 +968,26 @@ r_ensureHidden('r_new_prem_raw');
 document.getElementById('r_loadBtn').addEventListener('click', r_loadChain);
 document.getElementById('r_ticker_top').addEventListener('keydown', function(e) { if (e.key === 'Enter') r_loadChain(); });
 
-document.getElementById('r_cur_expiry').addEventListener('change', r_loadCurStrikes);
-document.getElementById('r_new_expiry').addEventListener('change', r_loadNewStrikes);
+function r_calcDTE(dateStr, outputId) {
+  var el = document.getElementById(outputId);
+  if (!el) return;
+  if (!dateStr) { el.value = ''; return; }
+  var ep = dateStr.split('-');
+  if (ep.length !== 3) { el.value = ''; return; }
+  var expDate = new Date(parseInt(ep[0]), parseInt(ep[1]) - 1, parseInt(ep[2]));
+  var today = new Date(); today.setHours(0,0,0,0);
+  var days = Math.ceil((expDate - today) / 86400000);
+  el.value = days > 0 ? days + 'd' : 'EXPIRED';
+}
+
+document.getElementById('r_cur_expiry').addEventListener('change', function() {
+  r_calcDTE(this.value, 'r_cur_dte');
+  r_loadCurStrikes();
+});
+document.getElementById('r_new_expiry').addEventListener('change', function() {
+  r_calcDTE(this.value, 'r_new_dte');
+  r_loadNewStrikes();
+});
 
 document.getElementById('r_cur_strike').addEventListener('change', function() {
   var sel = this;
