@@ -42,9 +42,10 @@ def quote(ticker):
         if not price:
             return jsonify({'error': 'No price data found for ' + ticker}), 404
         return jsonify({
-            'price': safe_float(price),
-            'prev':  safe_float(prev),
-            'name':  info.get('longName') or info.get('shortName') or ticker.upper(),
+            'price':  safe_float(price),
+            'prev':   safe_float(prev),
+            'name':   info.get('longName') or info.get('shortName') or ticker.upper(),
+            'sector': info.get('sector', ''),
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -111,6 +112,67 @@ def history(ticker):
         return jsonify({'dates': dates, 'closes': closes})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/peers/<ticker>')
+def peers(ticker):
+    try:
+        t = yf.Ticker(ticker.upper())
+        info = t.info
+        sector   = info.get('sector', '')
+        industry = info.get('industry', '')
+        name     = info.get('longName') or info.get('shortName') or ticker.upper()
+
+        if not sector and not industry:
+            return jsonify({'error': 'No sector data for ' + ticker, 'peers': []}), 200
+
+        # Use yfinance screener to find peers in same industry
+        screener = yf.Screener()
+        screener.set_predefined_body('most_actives')
+        body = {
+            'offset': 0,
+            'size': 100,
+            'sortField': 'marketcap',
+            'sortType': 'DESC',
+            'quoteType': 'EQUITY',
+            'query': {
+                'operator': 'AND',
+                'operands': [
+                    {'operator': 'EQ', 'operands': ['sector', sector]},
+                    {'operator': 'EQ', 'operands': ['industry', industry]},
+                ]
+            }
+        }
+        screener.set_body(body)
+        resp = screener.response
+        quotes = resp.get('quotes', [])
+
+        peer_list = []
+        for q in quotes:
+            sym = q.get('symbol', '')
+            if not sym or sym == ticker.upper():
+                continue
+            peer_list.append({
+                'ticker':    sym,
+                'name':      q.get('longName') or q.get('shortName') or sym,
+                'price':     safe_float(q.get('regularMarketPrice')),
+                'prev':      safe_float(q.get('regularMarketPreviousClose')),
+                'change':    safe_float(q.get('regularMarketChange')),
+                'changePct': safe_float(q.get('regularMarketChangePercent')),
+                'marketCap': safe_float(q.get('marketCap')),
+            })
+
+        # Sort by market cap descending
+        peer_list.sort(key=lambda x: x['marketCap'], reverse=True)
+
+        return jsonify({
+            'ticker':   ticker.upper(),
+            'name':     name,
+            'sector':   sector,
+            'industry': industry,
+            'peers':    peer_list[:25]
+        })
+    except Exception as e:
+        return jsonify({'error': str(e), 'peers': []}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
