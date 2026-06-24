@@ -189,6 +189,7 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
   <div class="tab-nav">
     <button class="tab-btn active" onclick="switchTab('tab1')">[ ANALYZER ]</button>
     <button class="tab-btn" onclick="switchTab('tab2')">[ ROLL-OUT SIMULATOR ]</button>
+    <button class="tab-btn" onclick="switchTab('tab3')">[ CHARTS ]</button>
   </div>
 
   <div id="tab1">
@@ -313,7 +314,7 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
         <input type="number" id="r_contracts" value="10" min="1" step="1" />
       </div>
       <div class="field">
-        <label>Current STO premium ($) (enter original premium price per share)</label>
+        <label>Current STO premium ($)</label>
         <input type="number" id="r_sto" placeholder="0.00" step="0.01" min="0" />
       </div>
     </div>
@@ -387,6 +388,32 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
     </div>
 
   </div><!-- /tab2 -->
+
+  <!-- TAB 3: CHARTS -->
+  <div id="tab3" style="display:none;">
+
+    <div class="dos-header">
+      <span class="dos-title">C:\TRADING\CHARTS.EXE&nbsp;&nbsp;VER 1.0</span>
+      <span class="dos-sub">// CHARTING TERMINAL</span>
+      <div class="dos-cursor"></div>
+    </div>
+
+    <div class="ticker-row" style="margin-bottom:1.25rem;">
+      <span class="ticker-prompt">TICKER:&gt;</span>
+      <input id="c_ticker" type="text" placeholder="______" maxlength="8" autocomplete="off" spellcheck="false" style="text-transform:uppercase;font-size:18px;font-weight:700;width:110px;letter-spacing:0.1em;border-color:#ffcc0077;" />
+      <button id="c_loadBtn">[ LOAD CHART ]</button>
+      <span id="c_status" style="font-size:11px;color:#664d00;"></span>
+    </div>
+
+    <div id="c_chartWrap" style="border:1px solid #ffcc0033;display:none;">
+      <div id="tradingview_chart"></div>
+    </div>
+
+    <div id="c_placeholder" style="padding:2rem;text-align:center;border:1px solid #ffcc0022;color:#443300;font-size:11px;letter-spacing:0.1em;">
+      ENTER A TICKER AND PRESS [ LOAD CHART ] TO BEGIN
+    </div>
+
+  </div><!-- /tab3 -->
 
   <div class="dos-footer">  <div class="dos-footer">
     F1=HELP &nbsp; F5=REFRESH &nbsp; F10=EXIT &nbsp;&nbsp;&nbsp; DATA DELAYED 15 MIN &nbsp;&nbsp;&nbsp; (C) 1987 CVP TRADE SYSTEMS INC.
@@ -791,10 +818,11 @@ document.getElementById('expirySelect').addEventListener('change', loadChain);
 
 // ── TAB SWITCHING ──────────────────────────────────────────
 function switchTab(id) {
-  document.getElementById('tab1').style.display = id === 'tab1' ? 'block' : 'none';
-  document.getElementById('tab2').style.display = id === 'tab2' ? 'block' : 'none';
+  ['tab1','tab2','tab3'].forEach(function(t) {
+    document.getElementById(t).style.display = t === id ? 'block' : 'none';
+  });
   document.querySelectorAll('.tab-btn').forEach(function(b, i) {
-    b.classList.toggle('active', (i === 0 && id === 'tab1') || (i === 1 && id === 'tab2'));
+    b.classList.toggle('active', (i === 0 && id === 'tab1') || (i === 1 && id === 'tab2') || (i === 2 && id === 'tab3'));
   });
 }
 
@@ -1014,6 +1042,70 @@ document.getElementById('r_new_strike').addEventListener('change', function() {
 
 ['r_contracts','r_sto','r_owned'].forEach(function(id) {
   document.getElementById(id).addEventListener('input', r_calcAll);
+});
+
+// ── CHARTS TAB ─────────────────────────────────────────────
+var tvWidget = null;
+
+function c_loadChart() {
+  var ticker = document.getElementById('c_ticker').value.trim().toUpperCase();
+  if (!ticker) return;
+  document.getElementById('c_status').textContent = 'LOADING...';
+  document.getElementById('c_placeholder').style.display = 'none';
+  document.getElementById('c_chartWrap').style.display = 'block';
+  document.getElementById('tradingview_chart').innerHTML = '';
+
+  // TradingView widget config
+  var script = document.createElement('script');
+  script.src = 'https://s3.tradingview.com/tv.js';
+  script.onload = function() {
+    tvWidget = new TradingView.widget({
+      container_id:    'tradingview_chart',
+      symbol:          ticker,
+      interval:        'D',
+      timezone:        'America/New_York',
+      theme:           'dark',
+      style:           '1',
+      locale:          'en',
+      toolbar_bg:      '#000000',
+      enable_publishing: false,
+      hide_side_toolbar: false,
+      allow_symbol_change: true,
+      save_image:      false,
+      height:          520,
+      width:           '100%',
+      studies: [
+        'KeltnerChannels@tv-basicstudies'
+      ],
+      overrides: {
+        'paneProperties.background':            '#000000',
+        'paneProperties.vertGridProperties.color': 'rgba(255,204,0,0.06)',
+        'paneProperties.horzGridProperties.color': 'rgba(255,204,0,0.06)',
+        'scalesProperties.textColor':           '#886600',
+        'scalesProperties.lineColor':           'rgba(255,204,0,0.2)',
+        'mainSeriesProperties.candleStyle.upColor':      '#aacc00',
+        'mainSeriesProperties.candleStyle.downColor':    '#ff4400',
+        'mainSeriesProperties.candleStyle.borderUpColor':   '#aacc00',
+        'mainSeriesProperties.candleStyle.borderDownColor': '#ff4400',
+        'mainSeriesProperties.candleStyle.wickUpColor':     '#aacc00',
+        'mainSeriesProperties.candleStyle.wickDownColor':   '#ff4400',
+      },
+    });
+    document.getElementById('c_status').textContent = ticker + ' LOADED';
+  };
+  script.onerror = function() {
+    document.getElementById('c_status').textContent = 'ERROR: COULD NOT LOAD TRADINGVIEW';
+  };
+  // Remove old script if present
+  var old = document.getElementById('tv_script');
+  if (old) old.remove();
+  script.id = 'tv_script';
+  document.head.appendChild(script);
+}
+
+document.getElementById('c_loadBtn').addEventListener('click', c_loadChart);
+document.getElementById('c_ticker').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') c_loadChart();
 });
 </script>
 </body>
