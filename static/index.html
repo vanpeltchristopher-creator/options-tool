@@ -1159,122 +1159,22 @@ document.getElementById('c_ticker').addEventListener('keydown', function(e) {
 });
 
 // ── PEER FINDER ────────────────────────────────────────────
-var SECTOR_MAP = {
-  // Tech — Big Cap
-  'Big Tech':                   ['AAPL','MSFT','GOOGL','GOOG','META','AMZN','NVDA','TSLA','ORCL','IBM','ADBE','CRM','INTC','CSCO','TXN','QCOM','HPQ','HPE','DELL','ACN'],
-  'Consumer Electronics':       ['AAPL','SONY','SAMSF','MSI','LOGI','HEAR','KOSS','GPRO','VOXX','VZIO'],
-  'Enterprise Software':        ['MSFT','CRM','SAP','ORCL','NOW','WDAY','TEAM','ZM','DDOG','MDB','ESTC','SPLK','VEEV'],
-  'Cloud Computing':            ['AMZN','MSFT','GOOGL','ORCL','CRM','SNOW','DDOG','NET','FSLY','CFLT','GTLB'],
-  'Cybersecurity':              ['CRWD','PANW','FTNT','ZS','OKTA','S','QLYS','TENB','VRNS','CYBR','HACK'],
-  'IT Services / Legacy Tech':  ['IBM','ACN','CTSH','WIT','INFY','HCL','EPAM','GLOB','LDOS','SAIC','CACI'],
-
-  // Semiconductors
-  'Semiconductors':             ['NVDA','AMD','INTC','QCOM','MU','AVGO','MRVL','AMAT','LRCX','KLAC','SMCI','ARM','ASML','TSM','ON','SWKS','MPWR','ENTG'],
-  'Semiconductor Equipment':    ['AMAT','LRCX','KLAC','ONTO','ACMR','CAMT','ICHR','MKSI','ENTG','UCTT'],
-
-  // AI
-  'AI / Machine Learning':      ['NVDA','MSFT','GOOGL','META','AMZN','PLTR','AI','BBAI','SOUN','KOPN','BIGB','RBRK','AMBA'],
-
-  // EV & Auto
-  'EV / Electric Vehicles':     ['TSLA','RIVN','LCID','NIO','XPEV','LI','FSR','GOEV','AYRO','GM','F','STLA','TM','HMC'],
-  'EV Charging':                ['CHPT','BLNK','EVGO','VLTA','WAVE','AMPE'],
-  'Auto / Traditional':         ['GM','F','STLA','TM','HMC','NSANY','FCAU','BWA','LEA','MGA','ALV'],
-  'Auto Parts':                 ['APH','BWA','LEA','MGA','ALV','GT','SUP','DAN','SMP','THRM'],
-
-  // eVTOL / Aerospace
-  'eVTOL / Urban Air Mobility': ['JOBY','ACHR','BETA','LILM','EH','EVTL','EVEX','BLDE','AVAV'],
-  'Aerospace / Defense':        ['BA','LMT','RTX','NOC','GD','HII','TDG','HEI','KTOS','RKLB','ASTS','HXL','HEICO','TDY'],
-  'Space / Satellites':         ['RKLB','ASTS','SPCE','MNTS','BKSY','PL','GSAT','GILT','ISAT'],
-
-  // Mining
-  'Mining / Precious Metals':   ['NAK','NEM','GOLD','AEM','KGC','HL','PAAS','CDE','EXK','AG','WPM','FNV','OR','RGLD'],
-  'Mining / Copper':            ['FCX','SCCO','HBM','TECK','CS','CPER','COPX'],
-  'Mining / Lithium':           ['ALB','SQM','LAC','PLL','LTHM','SGML','LIAC','ROCK','LIXT'],
-  'Mining / Silver':            ['AG','PAAS','HL','CDE','EXK','MTA','SILV','SILVRF'],
-  'Mining / Iron & Steel':      ['CLF','X','NUE','STLD','CMC','RS','ATI','WOR','ZEUS'],
-  'Mining / Uranium':           ['CCJ','UEC','UUUU','URG','DNN','BQSSF','NXE','PALAF'],
-
-  // Energy
-  'Oil & Gas':                  ['XOM','CVX','COP','OXY','PXD','DVN','HES','MRO','APA','CLR','EOG','FANG','PR'],
-  'Oil Services':               ['SLB','HAL','BKR','NOV','FTI','LBRT','PUMP','NINE','WHD','WTTR'],
-  'Solar / Renewable Energy':   ['ENPH','SEDG','FSLR','SPWR','RUN','ARRY','NOVA','CSIQ','JKS','MAXN'],
-  'Wind / Clean Energy':        ['NEE','BEP','CWEN','AY','PLUG','BE','FCEL','BLDP','GPRE','AMRC'],
-  'Electric Utilities':         ['NEE','DUK','SO','D','AEP','EXC','PCG','XEL','WEC','ED','ETR','EIX'],
-  'Natural Gas':                ['LNG','CQP','AR','EQT','RRC','SWN','CNX','CTRA','CHK','TELL'],
-
-  // Financials
-  'Big Banks':                  ['JPM','BAC','WFC','C','GS','MS','BK','STT','USB','PNC','TFC','RF'],
-  'Regional Banks':             ['SIVB','SBNY','WAL','PACW','BANC','COLB','HBAN','CFG','FHN','ZION','CMA','KEY'],
-  'Investment Banks / Brokers': ['GS','MS','SCHW','IBKR','RJF','SF','LAZ','EVR','MC','PJT'],
-  'Fintech':                    ['SQ','PYPL','AFRM','UPST','SOFI','LC','HOOD','COIN','PAYO','FLYW','BILL'],
-  'Insurance':                  ['BRK-B','MET','PRU','AFL','TRV','ALL','CB','PGR','HIG','L','GL','EG'],
-  'Asset Management':           ['BLK','BX','APO','KKR','CG','ARES','BAM','TROW','IVZ','AMG','WDR'],
-  'Crypto / Blockchain':        ['COIN','MSTR','RIOT','MARA','HUT','BITF','CLSK','BTBT','BTDR','SATO'],
-
-  // Healthcare
-  'Big Pharma':                 ['JNJ','PFE','ABBV','MRK','LLY','BMY','AMGN','GILD','BIIB','REGN','VRTX'],
-  'Biotech / Genomics':         ['MRNA','BNTX','NVAX','CRSP','EDIT','NTLA','BEAM','PACB','ILMN','ARKG'],
-  'Biotech / Small Cap':        ['SAVA','AGEN','CYTO','OCGN','NKTR','IMVT','PRAX','IDYA','ACAD','INVA'],
-  'Medical Devices':            ['MDT','ABT','ISRG','SYK','BSX','EW','ZBH','BDX','BAX','HOLX','NVCR'],
-  'Healthcare Services':        ['UNH','CVS','CI','HUM','CNC','MOH','ELV','HCA','THC','UHS'],
-  'Cannabis':                   ['TLRY','CGC','CURLF','CRON','ACB','SNDL','GTBIF','IIPR','AYRWF','TCNNF'],
-
-  // Consumer
-  'Big Retail':                 ['AMZN','WMT','TGT','COST','HD','LOW','TJX','ROST','DG','DLTR','FIVE','BJ'],
-  'E-Commerce':                 ['AMZN','SHOP','ETSY','EBAY','W','WISH','PRTS','OSTK','BARK','CPNG'],
-  'Luxury / Apparel':           ['LVMUY','CPRI','TPR','RL','PVH','VFC','HBI','UAA','LULU','NKE','SKX'],
-  'Food & Beverage':            ['KO','PEP','MDLZ','GIS','K','CPB','CAG','SJM','MKC','HRL','TSN','KHC'],
-  'Restaurants':                ['MCD','SBUX','CMG','YUM','QSR','DPZ','WING','JACK','WEN','EAT','DRI'],
-  'Consumer Staples':           ['PG','CL','KMB','CHD','CLX','ENR','SPB','COTY','ELF','USFD'],
-
-  // Real Estate
-  'Real Estate / REITs':        ['AMT','PLD','EQIX','SPG','O','VICI','WPC','NNN','STAG','IIPR','CCI','SBAC'],
-  'Homebuilders':               ['DHI','LEN','PHM','TOL','KBH','MDC','MHO','TMHC','LGIH','NVR','IBP'],
-
-  // Media & Entertainment
-  'Streaming / Media':          ['NFLX','DIS','WBD','PARA','FOXA','ROKU','SPOT','TTWO','EA','ATVI','LGF-A'],
-  'Social Media':               ['META','SNAP','PINS','TWTR','RDDT','BMBL','MTCH','IAC','ZETA'],
-  'Gaming':                     ['TTWO','EA','ATVI','RBLX','UNITY','DKNG','PENN','RSI','BETZ','GAMB'],
-
-  // Travel & Leisure
-  'Airlines':                   ['DAL','UAL','AAL','LUV','SAVE','ALK','HA','JBLU','SKYW','ULCC'],
-  'Cruise / Travel':            ['CCL','RCL','NCLH','HLT','MAR','H','MGM','WYNN','LVS','EXPE','BKNG'],
-
-  // Industrials
-  'Shipping / Freight':         ['ZIM','DAC','GSL','SB','GOGL','EGLE','SBLK','NMM','GNK','MATX'],
-  'Logistics':                  ['UPS','FDX','XPO','SAIA','ODFL','WERN','JBHT','CHRW','EXPD','ECHO'],
-  'Industrial Machinery':       ['CAT','DE','EMR','ETN','ROK','PH','IR','AME','ITW','XYL','GNRC'],
-  'Construction':               ['VMC','MLM','EXP','USCR','SUM','BLDR','IBP','TREX','AZEK','BECN'],
-
-  // Telecom
-  'Telecom':                    ['T','VZ','TMUS','LUMN','DISH','ATUS','CCOI','SHEN','USM','TDS'],
-  'Satellite / Telecom':        ['GSAT','VSAT','ViaSat','IRDM','SATS','GILT','MAXR'],
-};
-
-// Custom additions stored per-session
-var customPeers = {};
+// ── PEER FINDER — dynamic via backend ─────────────────────
 var currentSector = null;
 var currentPeerTicker = null;
+var customPeers = {};
 
-function p_findSector(ticker) {
-  ticker = ticker.toUpperCase();
-  for (var sector in SECTOR_MAP) {
-    if (SECTOR_MAP[sector].indexOf(ticker) !== -1) return sector;
-  }
-  // Check custom additions
+function p_findCustomSector(ticker) {
   for (var s in customPeers) {
     if (customPeers[s] && customPeers[s].indexOf(ticker) !== -1) return s;
   }
   return null;
 }
 
-function p_getPeers(sector) {
-  var base = SECTOR_MAP[sector] ? SECTOR_MAP[sector].slice() : [];
-  var custom = customPeers[sector] ? customPeers[sector] : [];
-  // Merge and dedupe
-  custom.forEach(function(t) { if (base.indexOf(t) === -1) base.push(t); });
-  return base;
-}
+// Custom additions stored per-session
+var customPeers = {};
+var currentSector = null;
+var currentPeerTicker = null;
 
 async function p_loadPeers() {
   var ticker = document.getElementById('p_ticker').value.trim().toUpperCase();
@@ -1285,105 +1185,83 @@ async function p_loadPeers() {
   document.getElementById('p_placeholder').style.display = 'none';
   document.getElementById('p_results').style.display = 'none';
   document.getElementById('p_sector_display').style.display = 'none';
-
-  // Find sector
-  var sector = p_findSector(ticker);
-
-  // If not in map, try to get sector from yfinance backend
-  if (!sector) {
-    try {
-      var q = await apiFetch('/quote/' + ticker);
-      if (q.sector) {
-        // Try to match to our map
-        for (var s in SECTOR_MAP) {
-          if (s.toLowerCase().indexOf(q.sector.toLowerCase()) !== -1) { sector = s; break; }
-        }
-      }
-    } catch(e) {}
-  }
-
-  if (!sector) {
-    document.getElementById('p_status').textContent = '"' + ticker + '" NOT FOUND IN SECTOR MAP — ADD IT MANUALLY BELOW';
-    document.getElementById('p_results').style.display = 'block';
-    document.getElementById('p_sector_display').style.display = 'none';
-    document.getElementById('p_tbody').innerHTML = '<tr><td colspan="5" style="color:#664d00;text-align:center;padding:1rem;">NO SECTOR MATCH FOUND FOR ' + ticker + '</td></tr>';
-    return;
-  }
-
-  currentSector = sector;
-  document.getElementById('p_sector_name').textContent = sector.toUpperCase();
-  document.getElementById('p_sector_display').style.display = 'block';
-
-  var peers = p_getPeers(sector);
-  // Filter out the searched ticker from peers list
-  peers = peers.filter(function(t) { return t !== ticker; });
-  // Add searched ticker at top
-  peers.unshift(ticker);
-
-  document.getElementById('p_status').textContent = 'LOADING ' + peers.length + ' PEERS...';
   document.getElementById('p_tbody').innerHTML = '';
 
-  // Load quotes for all peers in parallel with per-ticker timeout
-  function fetchWithTimeout(t) {
-    return new Promise(function(resolve, reject) {
-      var timer = setTimeout(function() { reject(new Error('TIMEOUT')); }, 6000);
-      apiFetch('/quote/' + t)
-        .then(function(q) { clearTimeout(timer); resolve({ ticker: t, quote: q }); })
-        .catch(function(e) { clearTimeout(timer); reject(e); });
-    });
-  }
-  var results = await Promise.allSettled(peers.map(fetchWithTimeout));
+  try {
+    var data = await apiFetch('/peers/' + ticker);
 
-  var tbody = document.getElementById('p_tbody');
-  tbody.innerHTML = '';
-
-  // Sort fulfilled results by price ascending, keep searched ticker at top
-  var searched = results.find(function(r) { return r.status === 'fulfilled' && r.value.ticker === ticker; });
-  var others = results.filter(function(r) { return !(r.status === 'fulfilled' && r.value.ticker === ticker); });
-  others.sort(function(a, b) {
-    var pa = a.status === 'fulfilled' ? a.value.quote.price : 0;
-    var pb = b.status === 'fulfilled' ? b.value.quote.price : 0;
-    return pa - pb;
-  });
-  if (searched) others.unshift(searched);
-  results = others;
-
-  results.forEach(function(r) {
-    var tr = document.createElement('tr');
-    if (r.status === 'fulfilled') {
-      var d = r.value;
-      var change = d.quote.price - d.quote.prev;
-      var changePct = d.quote.prev ? (change / d.quote.prev * 100) : 0;
-      var isSearched = d.ticker === ticker;
-      var changeColor = change >= 0 ? '#aacc00' : '#ff4400';
-      tr.innerHTML =
-        '<td style="color:' + (isSearched ? '#ffee66' : '#ffcc00') + ';font-weight:' + (isSearched ? '700' : '400') + ';">' +
-          (isSearched ? '&#9658; ' : '') + d.ticker +
-        '</td>' +
-        '<td style="font-family:var(--sans,sans-serif);font-size:11px;color:#886600;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
-          (d.quote.name || '').toUpperCase() +
-        '</td>' +
-        '<td>$' + Number(d.quote.price).toFixed(2) + '</td>' +
-        '<td style="color:' + changeColor + ';">' + (change >= 0 ? '+' : '') + change.toFixed(2) + '</td>' +
-        '<td style="color:' + changeColor + ';">' + (changePct >= 0 ? '+' : '') + changePct.toFixed(2) + '%</td>';
-      // Click to load in analyzer
-      tr.style.cursor = 'pointer';
-      tr.title = 'Click to load ' + d.ticker + ' in Analyzer';
-      (function(t) {
-        tr.addEventListener('click', function() {
-          document.getElementById('ticker').value = t;
-          switchTab('tab1');
-          fetchAll();
-        });
-      })(d.ticker);
-    } else {
-      tr.innerHTML = '<td>' + r.value.ticker + '</td><td colspan="4" style="color:#443300;">UNAVAILABLE</td>';
+    if (!data.sector) {
+      document.getElementById('p_status').textContent = 'NO SECTOR DATA FOR "' + ticker + '"';
+      document.getElementById('p_results').style.display = 'block';
+      document.getElementById('p_tbody').innerHTML = '<tr><td colspan="5" style="color:#664d00;text-align:center;padding:1rem;">NO SECTOR DATA FOUND</td></tr>';
+      return;
     }
-    tbody.appendChild(tr);
-  });
 
-  document.getElementById('p_results').style.display = 'block';
-  document.getElementById('p_status').textContent = peers.length + ' PEERS LOADED // CLICK ROW TO LOAD IN ANALYZER';
+    currentSector = data.sector + ' / ' + data.industry;
+    document.getElementById('p_sector_name').textContent = (data.sector + ' — ' + data.industry).toUpperCase();
+    document.getElementById('p_sector_display').style.display = 'block';
+
+    var peers = data.peers || [];
+
+    // Add searched ticker at top
+    var tbody = document.getElementById('p_tbody');
+
+    // Searched ticker row first
+    var selfRow = document.createElement('tr');
+    selfRow.style.cursor = 'pointer';
+    selfRow.innerHTML =
+      '<td style="color:#ffee66;font-weight:700;">&#9658; ' + ticker + '</td>' +
+      '<td style="font-size:11px;color:#886600;">' + (data.name || '').toUpperCase() + '</td>' +
+      '<td style="color:#443300;">—</td><td>—</td><td>—</td>';
+    // Load self quote
+    apiFetch('/quote/' + ticker).then(function(q) {
+      var change = q.price - q.prev;
+      var pct = q.prev ? (change / q.prev * 100) : 0;
+      var c = change >= 0 ? '#aacc00' : '#ff4400';
+      selfRow.innerHTML =
+        '<td style="color:#ffee66;font-weight:700;">&#9658; ' + ticker + '</td>' +
+        '<td style="font-size:11px;color:#886600;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (q.name||'').toUpperCase() + '</td>' +
+        '<td>$' + q.price.toFixed(2) + '</td>' +
+        '<td style="color:' + c + ';">' + (change>=0?'+':'') + change.toFixed(2) + '</td>' +
+        '<td style="color:' + c + ';">' + (pct>=0?'+':'') + pct.toFixed(2) + '%</td>';
+    }).catch(function(){});
+    (function(sym) {
+      selfRow.addEventListener('click', function() {
+        document.getElementById('ticker').value = sym;
+        switchTab('tab1'); fetchAll();
+      });
+    })(ticker);
+    tbody.appendChild(selfRow);
+
+    // Peer rows — data already includes price/change from screener
+    peers.forEach(function(p) {
+      var tr = document.createElement('tr');
+      tr.style.cursor = 'pointer';
+      var change = p.change || (p.price - p.prev);
+      var pct = p.changePct || (p.prev ? change / p.prev * 100 : 0);
+      var c = change >= 0 ? '#aacc00' : '#ff4400';
+      tr.innerHTML =
+        '<td style="color:#ffcc00;">' + p.ticker + '</td>' +
+        '<td style="font-size:11px;color:#886600;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (p.name||'').toUpperCase() + '</td>' +
+        '<td>' + (p.price ? '$' + p.price.toFixed(2) : '—') + '</td>' +
+        '<td style="color:' + c + ';">' + (change>=0?'+':'') + change.toFixed(2) + '</td>' +
+        '<td style="color:' + c + ';">' + (pct>=0?'+':'') + pct.toFixed(2) + '%</td>';
+      (function(sym) {
+        tr.addEventListener('click', function() {
+          document.getElementById('ticker').value = sym;
+          switchTab('tab1'); fetchAll();
+        });
+      })(p.ticker);
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById('p_results').style.display = 'block';
+    document.getElementById('p_status').textContent = peers.length + ' PEERS LOADED // CLICK ROW TO LOAD IN ANALYZER';
+
+  } catch(e) {
+    document.getElementById('p_status').textContent = 'ERROR: ' + e.message;
+    document.getElementById('p_results').style.display = 'block';
+  }
 }
 
 document.getElementById('p_loadBtn').addEventListener('click', p_loadPeers);
