@@ -1182,7 +1182,7 @@ var SECTOR_MAP = {
   'Auto Parts':                 ['APH','BWA','LEA','MGA','ALV','GT','SUP','DAN','SMP','THRM'],
 
   // eVTOL / Aerospace
-  'eVTOL / Urban Air Mobility': ['JOBY','ACHR','EVTL','LILM','BETA','EHAV','STVN'],
+  'eVTOL / Urban Air Mobility': ['JOBY','ACHR','BETA','LILM','EVTL','WKHS','BLDE'],
   'Aerospace / Defense':        ['BA','LMT','RTX','NOC','GD','HII','TDG','HEI','KTOS','RKLB','ASTS','HXL','HEICO','TDY'],
   'Space / Satellites':         ['RKLB','ASTS','SPCE','MNTS','BKSY','PL','GSAT','GILT','ISAT'],
 
@@ -1323,10 +1323,16 @@ async function p_loadPeers() {
   document.getElementById('p_status').textContent = 'LOADING ' + peers.length + ' PEERS...';
   document.getElementById('p_tbody').innerHTML = '';
 
-  // Load quotes for all peers in parallel (batched)
-  var results = await Promise.allSettled(peers.map(function(t) {
-    return apiFetch('/quote/' + t).then(function(q) { return { ticker: t, quote: q }; });
-  }));
+  // Load quotes for all peers in parallel with per-ticker timeout
+  function fetchWithTimeout(t) {
+    return new Promise(function(resolve, reject) {
+      var timer = setTimeout(function() { reject(new Error('TIMEOUT')); }, 6000);
+      apiFetch('/quote/' + t)
+        .then(function(q) { clearTimeout(timer); resolve({ ticker: t, quote: q }); })
+        .catch(function(e) { clearTimeout(timer); reject(e); });
+    });
+  }
+  var results = await Promise.allSettled(peers.map(fetchWithTimeout));
 
   var tbody = document.getElementById('p_tbody');
   tbody.innerHTML = '';
