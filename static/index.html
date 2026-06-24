@@ -1159,16 +1159,105 @@ document.getElementById('c_ticker').addEventListener('keydown', function(e) {
 });
 
 // ── PEER FINDER ────────────────────────────────────────────
-// ── PEER FINDER — dynamic via backend ─────────────────────
+// ── PEER FINDER ────────────────────────────────────────────
 var currentSector = null;
 var currentPeerTicker = null;
 var customPeers = {};
 
-function p_findCustomSector(ticker) {
+var SECTOR_MAP = {
+  // Tech
+  'Big Tech':                     ['AAPL','MSFT','GOOGL','GOOG','META','AMZN','NVDA','TSLA','ORCL','IBM','ADBE','CRM','INTC','CSCO','TXN','QCOM','HPQ','HPE','DELL','ACN'],
+  'Consumer Electronics':         ['AAPL','SONY','MSI','LOGI','HEAR','GPRO'],
+  'Enterprise Software':          ['MSFT','CRM','SAP','ORCL','NOW','WDAY','TEAM','ZM','DDOG','MDB','VEEV'],
+  'Cloud Computing':              ['AMZN','MSFT','GOOGL','ORCL','CRM','SNOW','DDOG','NET','CFLT','GTLB'],
+  'Cybersecurity':                ['CRWD','PANW','FTNT','ZS','OKTA','S','QLYS','TENB','CYBR','HACK'],
+  'IT Services':                  ['IBM','ACN','CTSH','WIT','INFY','EPAM','GLOB','LDOS','SAIC'],
+  'Semiconductors':               ['NVDA','AMD','INTC','QCOM','MU','AVGO','MRVL','AMAT','LRCX','KLAC','SMCI','ARM','ASML','TSM','ON','SWKS','MPWR'],
+  'Semiconductor Equipment':      ['AMAT','LRCX','KLAC','ONTO','ACMR','CAMT','MKSI','ENTG'],
+  // AI & Autonomous
+  'AI / Machine Learning':        ['NVDA','MSFT','GOOGL','META','AMZN','PLTR','AI','BBAI','SOUN','RBRK','AMBA','TSLA'],
+  'Autonomous Vehicles / AI':     ['KDK','TEM','UBER','LYFT','EMBK','MOBILEYE','LAZR','LIDR','INVZ','OUST','AEYE','AEVA','GOEV','WKHS'],
+  'Autonomous Trucking':          ['KDK','TEM','DRVN','PLUS','TRNX','HYLN','PTRA','NFI'],
+  'Robotics / Automation':        ['IRBT','VICR','ISRG','ROK','EMR','ABB','FANUY','KION','PATH','UiPath'],
+  // EV & Auto
+  'EV / Electric Vehicles':       ['TSLA','RIVN','LCID','NIO','XPEV','LI','FSR','GOEV','GM','F','STLA'],
+  'EV Charging':                  ['CHPT','BLNK','EVGO','WAVE','AMPE'],
+  'Auto / Traditional':           ['GM','F','STLA','TM','HMC','NSANY','BWA','LEA','MGA','ALV'],
+  // eVTOL & Aerospace
+  'eVTOL / Urban Air Mobility':   ['JOBY','ACHR','BETA','LILM','EH','EVTL','EVEX','BLDE','AVAV'],
+  'Aerospace / Defense':          ['BA','LMT','RTX','NOC','GD','HII','TDG','HEI','KTOS','RKLB','ASTS','TDY'],
+  'Space / Satellites':           ['RKLB','ASTS','SPCE','MNTS','BKSY','PL','GSAT'],
+  // Mining
+  'Mining / Precious Metals':     ['NAK','NEM','GOLD','AEM','KGC','HL','PAAS','CDE','EXK','AG','WPM','FNV','OR','RGLD'],
+  'Mining / Copper':              ['FCX','SCCO','HBM','TECK','CPER','COPX'],
+  'Mining / Lithium':             ['ALB','SQM','LAC','PLL','LTHM','SGML'],
+  'Mining / Silver':              ['AG','PAAS','HL','CDE','EXK','SILV'],
+  'Mining / Iron & Steel':        ['CLF','X','NUE','STLD','CMC','RS','ATI'],
+  'Mining / Uranium':             ['CCJ','UEC','UUUU','URG','DNN','NXE'],
+  // Energy
+  'Oil & Gas':                    ['XOM','CVX','COP','OXY','DVN','HES','MRO','APA','EOG','FANG'],
+  'Oil Services':                 ['SLB','HAL','BKR','NOV','LBRT','PUMP'],
+  'Solar / Renewable Energy':     ['ENPH','SEDG','FSLR','SPWR','RUN','ARRY','NOVA','CSIQ','JKS'],
+  'Clean Energy / Hydrogen':      ['NEE','BEP','CWEN','PLUG','BE','FCEL','BLDP'],
+  'Electric Utilities':           ['NEE','DUK','SO','D','AEP','EXC','PCG','XEL','WEC','ED'],
+  'Natural Gas':                  ['LNG','CQP','AR','EQT','RRC','SWN','CHK'],
+  // Financials
+  'Big Banks':                    ['JPM','BAC','WFC','C','GS','MS','USB','PNC','TFC','RF'],
+  'Regional Banks':               ['WAL','PACW','BANC','COLB','HBAN','CFG','ZION','CMA','KEY'],
+  'Fintech':                      ['SQ','PYPL','AFRM','UPST','SOFI','LC','HOOD','COIN','BILL'],
+  'Investment Banks / Brokers':   ['GS','MS','SCHW','IBKR','RJF','SF','LAZ','EVR'],
+  'Insurance':                    ['BRK-B','MET','PRU','AFL','TRV','ALL','CB','PGR','HIG'],
+  'Asset Management':             ['BLK','BX','APO','KKR','CG','ARES','BAM','TROW'],
+  'Crypto / Blockchain':          ['COIN','MSTR','RIOT','MARA','HUT','BITF','CLSK','BTBT'],
+  // Healthcare
+  'Big Pharma':                   ['JNJ','PFE','ABBV','MRK','LLY','BMY','AMGN','GILD','BIIB','REGN','VRTX'],
+  'Biotech / Genomics':           ['MRNA','BNTX','NVAX','CRSP','EDIT','NTLA','BEAM','PACB','ILMN'],
+  'Biotech / Small Cap':          ['SAVA','AGEN','OCGN','NKTR','IMVT','PRAX','IDYA','ACAD'],
+  'Medical Devices':              ['MDT','ABT','ISRG','SYK','BSX','EW','ZBH','BDX','HOLX'],
+  'Healthcare Services':          ['UNH','CVS','CI','HUM','CNC','MOH','ELV','HCA'],
+  'Cannabis':                     ['TLRY','CGC','CRON','ACB','SNDL','IIPR'],
+  // Consumer
+  'Big Retail':                   ['AMZN','WMT','TGT','COST','HD','LOW','TJX','ROST','DG','DLTR'],
+  'E-Commerce':                   ['AMZN','SHOP','ETSY','EBAY','W','CPNG'],
+  'Luxury / Apparel':             ['LVMUY','CPRI','TPR','RL','PVH','VFC','LULU','NKE','SKX'],
+  'Food & Beverage':              ['KO','PEP','MDLZ','GIS','K','CPB','CAG','MKC','HRL','TSN','KHC'],
+  'Restaurants':                  ['MCD','SBUX','CMG','YUM','QSR','DPZ','WING','WEN','DRI'],
+  'Consumer Staples':             ['PG','CL','KMB','CHD','CLX','ENR','ELF'],
+  // Real Estate
+  'Real Estate / REITs':          ['AMT','PLD','EQIX','SPG','O','VICI','WPC','NNN','STAG','CCI','SBAC'],
+  'Homebuilders':                 ['DHI','LEN','PHM','TOL','KBH','MDC','NVR','IBP'],
+  // Media & Entertainment
+  'Streaming / Media':            ['NFLX','DIS','WBD','PARA','FOXA','ROKU','SPOT','TTWO','EA'],
+  'Social Media':                 ['META','SNAP','PINS','RDDT','BMBL','MTCH'],
+  'Gaming':                       ['TTWO','EA','RBLX','DKNG','PENN'],
+  // Travel & Leisure
+  'Airlines':                     ['DAL','UAL','AAL','LUV','ALK','HA','JBLU','ULCC'],
+  'Cruise / Travel':              ['CCL','RCL','NCLH','HLT','MAR','MGM','WYNN','LVS','EXPE','BKNG'],
+  // Industrials
+  'Shipping / Freight':           ['ZIM','DAC','GSL','SB','GOGL','EGLE','SBLK','NMM','GNK'],
+  'Logistics':                    ['UPS','FDX','XPO','SAIA','ODFL','WERN','JBHT','CHRW','EXPD'],
+  'Industrial Machinery':         ['CAT','DE','EMR','ETN','ROK','PH','IR','AME','ITW','GNRC'],
+  'Construction':                 ['VMC','MLM','EXP','BLDR','IBP','TREX','BECN'],
+  // Telecom
+  'Telecom':                      ['T','VZ','TMUS','LUMN','DISH','ATUS'],
+};
+
+function p_findSector(ticker) {
+  ticker = ticker.toUpperCase();
+  for (var s in SECTOR_MAP) {
+    if (SECTOR_MAP[s].indexOf(ticker) !== -1) return s;
+  }
   for (var s in customPeers) {
     if (customPeers[s] && customPeers[s].indexOf(ticker) !== -1) return s;
   }
   return null;
+}
+
+function p_getPeers(sector) {
+  var base = SECTOR_MAP[sector] ? SECTOR_MAP[sector].slice() : [];
+  var custom = customPeers[sector] || [];
+  custom.forEach(function(t) { if (base.indexOf(t) === -1) base.push(t); });
+  return base;
 }
 
 // Custom additions stored per-session
