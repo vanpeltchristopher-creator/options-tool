@@ -437,6 +437,8 @@ function calc(animate) {
   var effCost = price - premium, otm = price - strike;
   var premPctPrice  = price  ? (premium / price)  * 100 : 0;
   var premPctStrike = strike ? (premium / strike) * 100 : 0;
+  var premPctEl = document.getElementById('premPctDisplay');
+  if (premPctEl) premPctEl.value = (price && premium) ? (premium / price * 100).toFixed(2) + '%' : '';
 
   var dte = '—', dteNum = 0;
   if (expVal) {
@@ -836,6 +838,11 @@ function r_calcAll() {
 
   // New strike × shares
   document.getElementById('r_strike_value').textContent = newStrike ? r_fmt(newStrike * shares, 0) : '—';
+
+  // % of price
+  var livePrice = rollCurrentPrice > 0 ? rollCurrentPrice : (parseFloat(document.getElementById('r_owned').value) || 0);
+  document.getElementById('r_new_prem_pct').textContent   = (newPrem > 0 && livePrice > 0) ? (newPrem / livePrice * 100).toFixed(2) + '%' : '—';
+  document.getElementById('r_delta_prem_pct').textContent = (newPrem > 0 && livePrice > 0) ? (Math.abs(deltaPrem) / livePrice * 100).toFixed(2) + '%' : '—';
 
   // Stock basis
   if (owned > 0) {
