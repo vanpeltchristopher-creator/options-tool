@@ -187,14 +187,14 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
 
   <!-- TAB NAV -->
   <div class="tab-nav">
-    <button class="tab-btn active" onclick="switchTab('tab1')">[ ANALYZER ]</button>
+    <button class="tab-btn active" onclick="switchTab('tab1')">[ COVERED CALL ANALYZER ]</button>
     <button class="tab-btn" onclick="switchTab('tab2')">[ ROLL-OUT SIMULATOR ]</button>
   </div>
 
   <div id="tab1">
   <div class="dos-header">
     <span class="dos-title">C:\TRADING\OPTIONS.EXE&nbsp;&nbsp;VER 1.0</span>
-    <span class="dos-sub">// COVERED CALL ANALYZER</span>
+    <span class="dos-sub">// OPTION ANALYZER</span>
     <div class="dos-cursor"></div>
   </div>
 
@@ -353,7 +353,6 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
       <div class="metric"><div class="mlabel">New prem % of price</div><div class="mval" id="r_new_prem_pct">—</div></div>
       <div class="metric"><div class="mlabel">Δ Strike</div><div class="mval" id="r_delta_strike">—</div></div>
       <div class="metric" id="r_card_delta_prem"><div class="mlabel">Δ Premium value</div><div class="mval" id="r_delta_prem">—</div></div>
-      <div class="metric"><div class="mlabel">Prem value % of price</div><div class="mval" id="r_delta_prem_pct">—</div></div>
       <div class="metric" id="r_card_net_prem"><div class="mlabel">Net premium</div><div class="mval" id="r_net_prem">—</div></div>
       <div class="metric" id="r_card_total_prem"><div class="mlabel">Total premium ($)</div><div class="mval" id="r_total_prem">—</div></div>
     </div>
@@ -842,7 +841,6 @@ function r_calcAll() {
   // % of price
   var livePrice = rollCurrentPrice > 0 ? rollCurrentPrice : (parseFloat(document.getElementById('r_owned').value) || 0);
   document.getElementById('r_new_prem_pct').textContent   = (newPrem > 0 && livePrice > 0) ? (newPrem / livePrice * 100).toFixed(2) + '%' : '—';
-  document.getElementById('r_delta_prem_pct').textContent = (newPrem > 0 && livePrice > 0) ? (Math.abs(deltaPrem) / livePrice * 100).toFixed(2) + '%' : '—';
 
   // Stock basis
   if (owned > 0) {
