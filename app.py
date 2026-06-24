@@ -5,7 +5,7 @@ Call Option Analyzer - serves both the frontend HTML and backend API.
 import os
 try:
     import yfinance as yf
-    from flask import Flask, jsonify, send_from_directory
+    from flask import Flask, jsonify, send_from_directory, request
     from flask_cors import CORS
 except ImportError:
     print("\n  Missing dependencies. Run:\n  pip install yfinance flask flask-cors\n")
@@ -209,6 +209,35 @@ def peers(ticker):
         })
     except Exception as e:
         return jsonify({'error': str(e), 'peers': []}), 500
+
+@app.route('/quotes/batch')
+def quotes_batch():
+    tickers = request.args.get('tickers', '')
+    if not tickers:
+        return jsonify({'quotes': []})
+    symbols = [t.strip().upper() for t in tickers.split(',') if t.strip()][:25]
+    results = []
+    for sym in symbols:
+        try:
+            t = yf.Ticker(sym)
+            fi = t.fast_info
+            price = safe_float(getattr(fi, 'last_price', 0))
+            prev  = safe_float(getattr(fi, 'previous_close', 0))
+            name  = sym
+            try:
+                info = t.info
+                name = info.get('longName') or info.get('shortName') or sym
+            except Exception:
+                pass
+            results.append({
+                'ticker': sym,
+                'price':  price,
+                'prev':   prev,
+                'name':   name,
+            })
+        except Exception as e:
+            results.append({'ticker': sym, 'error': str(e)})
+    return jsonify({'quotes': results})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
