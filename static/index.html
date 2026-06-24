@@ -1274,82 +1274,74 @@ async function p_loadPeers() {
   document.getElementById('p_placeholder').style.display = 'none';
   document.getElementById('p_results').style.display = 'none';
   document.getElementById('p_sector_display').style.display = 'none';
-  document.getElementById('p_tbody').innerHTML = '';
 
+  var sector = p_findSector(ticker);
+  if (!sector) {
+    document.getElementById('p_status').textContent = '"' + ticker + '" NOT IN MAP — ADD MANUALLY BELOW';
+    document.getElementById('p_results').style.display = 'block';
+    document.getElementById('p_tbody').innerHTML = '<tr><td colspan="5" style="color:#664d00;text-align:center;padding:1rem;">NOT FOUND — USE ADD BUTTON BELOW</td></tr>';
+    currentSector = 'Custom';
+    return;
+  }
+
+  currentSector = sector;
+  document.getElementById('p_sector_name').textContent = sector.toUpperCase();
+  document.getElementById('p_sector_display').style.display = 'block';
+
+  var peers = p_getPeers(sector);
+  peers = peers.filter(function(t) { return t !== ticker; });
+  peers.unshift(ticker);
+
+  // Render skeleton rows immediately
+  var tbody = document.getElementById('p_tbody');
+  tbody.innerHTML = '';
+  var rowMap = {};
+  peers.forEach(function(t) {
+    var tr = document.createElement('tr');
+    var isSearched = t === ticker;
+    tr.innerHTML =
+      '<td style="color:' + (isSearched ? '#ffee66' : '#ffcc00') + ';font-weight:' + (isSearched ? '700' : '400') + ';">' +
+        (isSearched ? '&#9658; ' : '') + t +
+      '</td><td style="color:#443300;">LOADING...</td><td>—</td><td>—</td><td>—</td>';
+    tbody.appendChild(tr);
+    rowMap[t] = tr;
+  });
+  document.getElementById('p_results').style.display = 'block';
+  document.getElementById('p_status').textContent = 'FETCHING ' + peers.length + ' QUOTES...';
+
+  // Single batch request
   try {
-    var data = await apiFetch('/peers/' + ticker);
-
-    if (!data.sector) {
-      document.getElementById('p_status').textContent = 'NO SECTOR DATA FOR "' + ticker + '"';
-      document.getElementById('p_results').style.display = 'block';
-      document.getElementById('p_tbody').innerHTML = '<tr><td colspan="5" style="color:#664d00;text-align:center;padding:1rem;">NO SECTOR DATA FOUND</td></tr>';
-      return;
-    }
-
-    currentSector = data.sector + ' / ' + data.industry;
-    document.getElementById('p_sector_name').textContent = (data.sector + ' — ' + data.industry).toUpperCase();
-    document.getElementById('p_sector_display').style.display = 'block';
-
-    var peers = data.peers || [];
-
-    // Add searched ticker at top
-    var tbody = document.getElementById('p_tbody');
-
-    // Searched ticker row first
-    var selfRow = document.createElement('tr');
-    selfRow.style.cursor = 'pointer';
-    selfRow.innerHTML =
-      '<td style="color:#ffee66;font-weight:700;">&#9658; ' + ticker + '</td>' +
-      '<td style="font-size:11px;color:#886600;">' + (data.name || '').toUpperCase() + '</td>' +
-      '<td style="color:#443300;">—</td><td>—</td><td>—</td>';
-    // Load self quote
-    apiFetch('/quote/' + ticker).then(function(q) {
+    var batchData = await apiFetch('/quotes/batch?tickers=' + peers.join(','));
+    var loaded = 0, failed = 0;
+    (batchData.quotes || []).forEach(function(q) {
+      var tr = rowMap[q.ticker];
+      if (!tr) return;
+      if (!q.price) { tr.cells[1].textContent = 'NO DATA'; tr.cells[1].style.color = '#443300'; failed++; return; }
+      loaded++;
       var change = q.price - q.prev;
       var pct = q.prev ? (change / q.prev * 100) : 0;
-      var c = change >= 0 ? '#aacc00' : '#ff4400';
-      selfRow.innerHTML =
-        '<td style="color:#ffee66;font-weight:700;">&#9658; ' + ticker + '</td>' +
-        '<td style="font-size:11px;color:#886600;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (q.name||'').toUpperCase() + '</td>' +
-        '<td>$' + q.price.toFixed(2) + '</td>' +
-        '<td style="color:' + c + ';">' + (change>=0?'+':'') + change.toFixed(2) + '</td>' +
-        '<td style="color:' + c + ';">' + (pct>=0?'+':'') + pct.toFixed(2) + '%</td>';
-    }).catch(function(){});
-    (function(sym) {
-      selfRow.addEventListener('click', function() {
-        document.getElementById('ticker').value = sym;
-        switchTab('tab1'); fetchAll();
-      });
-    })(ticker);
-    tbody.appendChild(selfRow);
-
-    // Peer rows — data already includes price/change from screener
-    peers.forEach(function(p) {
-      var tr = document.createElement('tr');
-      tr.style.cursor = 'pointer';
-      var change = p.change || (p.price - p.prev);
-      var pct = p.changePct || (p.prev ? change / p.prev * 100 : 0);
+      var isSearched = q.ticker === ticker;
       var c = change >= 0 ? '#aacc00' : '#ff4400';
       tr.innerHTML =
-        '<td style="color:#ffcc00;">' + p.ticker + '</td>' +
-        '<td style="font-size:11px;color:#886600;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (p.name||'').toUpperCase() + '</td>' +
-        '<td>' + (p.price ? '$' + p.price.toFixed(2) : '—') + '</td>' +
+        '<td style="color:' + (isSearched ? '#ffee66' : '#ffcc00') + ';font-weight:' + (isSearched ? '700' : '400') + ';">' +
+          (isSearched ? '&#9658; ' : '') + q.ticker +
+        '</td>' +
+        '<td style="font-size:11px;color:#886600;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (q.name||q.ticker).toUpperCase() + '</td>' +
+        '<td>$' + Number(q.price).toFixed(2) + '</td>' +
         '<td style="color:' + c + ';">' + (change>=0?'+':'') + change.toFixed(2) + '</td>' +
         '<td style="color:' + c + ';">' + (pct>=0?'+':'') + pct.toFixed(2) + '%</td>';
+      tr.style.cursor = 'pointer';
       (function(sym) {
         tr.addEventListener('click', function() {
           document.getElementById('ticker').value = sym;
           switchTab('tab1'); fetchAll();
         });
-      })(p.ticker);
-      tbody.appendChild(tr);
+      })(q.ticker);
     });
-
-    document.getElementById('p_results').style.display = 'block';
-    document.getElementById('p_status').textContent = peers.length + ' PEERS LOADED // CLICK ROW TO LOAD IN ANALYZER';
-
+    document.getElementById('p_status').textContent =
+      loaded + ' PEERS LOADED' + (failed > 0 ? ' (' + failed + ' UNAVAILABLE)' : '') + ' // CLICK ROW TO LOAD IN ANALYZER';
   } catch(e) {
     document.getElementById('p_status').textContent = 'ERROR: ' + e.message;
-    document.getElementById('p_results').style.display = 'block';
   }
 }
 
