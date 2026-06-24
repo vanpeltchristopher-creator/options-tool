@@ -2,3 +2,4 @@ yfinance
 flask
 flask-cors
 gunicorn
+requests
