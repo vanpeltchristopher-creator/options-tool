@@ -190,6 +190,7 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
     <button class="tab-btn active" onclick="switchTab('tab1')">[ ANALYZER ]</button>
     <button class="tab-btn" onclick="switchTab('tab2')">[ ROLL-OUT SIMULATOR ]</button>
     <button class="tab-btn" onclick="switchTab('tab3')">[ CHARTS ]</button>
+    <button class="tab-btn" onclick="switchTab('tab4')">[ PEERS ]</button>
   </div>
 
   <div id="tab1">
@@ -414,6 +415,53 @@ hr { border: none; border-top: 1px solid #ffcc0022; margin: 1.25rem 0; }
     </div>
 
   </div><!-- /tab3 -->
+
+  <!-- TAB 4: PEERS -->
+  <div id="tab4" style="display:none;">
+
+    <div class="dos-header">
+      <span class="dos-title">C:\TRADING\PEERS.EXE&nbsp;&nbsp;VER 1.0</span>
+      <span class="dos-sub">// SECTOR PEER FINDER</span>
+      <div class="dos-cursor"></div>
+    </div>
+
+    <div class="ticker-row" style="margin-bottom:1.25rem;">
+      <span class="ticker-prompt">TICKER:&gt;</span>
+      <input id="p_ticker" type="text" placeholder="______" maxlength="8" autocomplete="off" spellcheck="false" style="text-transform:uppercase;font-size:18px;font-weight:700;width:110px;letter-spacing:0.1em;border-color:#ffcc0077;" />
+      <button id="p_loadBtn">[ FIND PEERS ]</button>
+      <span id="p_status" style="font-size:11px;color:#664d00;"></span>
+    </div>
+
+    <div id="p_sector_display" style="display:none;margin-bottom:1rem;">
+      <div class="section-label">Sector: <span id="p_sector_name" style="color:#ffcc00;"></span></div>
+    </div>
+
+    <div id="p_results" style="display:none;">
+      <div class="section-label">Peer stocks</div>
+      <div class="strike-table-wrap" style="max-height:400px;">
+        <table>
+          <thead>
+            <tr><th style="text-align:left;">Ticker</th><th style="text-align:left;">Name</th><th>Price</th><th>Change</th><th>% Chg</th></tr>
+          </thead>
+          <tbody id="p_tbody"></tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:1rem;">
+        <div class="section-label">Add ticker to this sector</div>
+        <div class="ticker-row">
+          <input id="p_add_ticker" type="text" placeholder="TICKER" maxlength="8" style="width:100px;text-transform:uppercase;" />
+          <button id="p_addBtn">[ ADD ]</button>
+          <span id="p_add_status" style="font-size:11px;color:#664d00;"></span>
+        </div>
+      </div>
+    </div>
+
+    <div id="p_placeholder" style="padding:2rem;text-align:center;border:1px solid #ffcc0022;color:#443300;font-size:11px;letter-spacing:0.1em;">
+      ENTER A TICKER AND PRESS [ FIND PEERS ] TO BEGIN
+    </div>
+
+  </div><!-- /tab4 -->
 
   <div class="dos-footer">  <div class="dos-footer">
     F1=HELP &nbsp; F5=REFRESH &nbsp; F10=EXIT &nbsp;&nbsp;&nbsp; DATA DELAYED 15 MIN &nbsp;&nbsp;&nbsp; (C) 1987 CVP TRADE SYSTEMS INC.
@@ -818,11 +866,11 @@ document.getElementById('expirySelect').addEventListener('change', loadChain);
 
 // ── TAB SWITCHING ──────────────────────────────────────────
 function switchTab(id) {
-  ['tab1','tab2','tab3'].forEach(function(t) {
+  ['tab1','tab2','tab3','tab4'].forEach(function(t) {
     document.getElementById(t).style.display = t === id ? 'block' : 'none';
   });
   document.querySelectorAll('.tab-btn').forEach(function(b, i) {
-    b.classList.toggle('active', (i === 0 && id === 'tab1') || (i === 1 && id === 'tab2') || (i === 2 && id === 'tab3'));
+    b.classList.toggle('active', (i === 0 && id === 'tab1') || (i === 1 && id === 'tab2') || (i === 2 && id === 'tab3') || (i === 3 && id === 'tab4'));
   });
 }
 
@@ -1108,6 +1156,175 @@ function c_loadChart() {
 document.getElementById('c_loadBtn').addEventListener('click', c_loadChart);
 document.getElementById('c_ticker').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') c_loadChart();
+});
+
+// ── PEER FINDER ────────────────────────────────────────────
+var SECTOR_MAP = {
+  'eVTOL / Urban Air Mobility': ['JOBY','ACHR','EVTL','LILM','BETA','EHAV','STVN'],
+  'Mining / Precious Metals':   ['NAK','NEM','GOLD','AEM','KGC','HL','PAAS','CDE','EXK','AG','WPM','FNV'],
+  'Mining / Copper':            ['FCX','SCCO','HBM','TECK','CS','CPER'],
+  'Mining / Lithium':           ['ALB','SQM','LAC','PLL','LTHM','SGML','LIAC'],
+  'Mining / Silver':            ['AG','PAAS','HL','CDE','EXK','MTA','SILV'],
+  'EV / Electric Vehicles':     ['TSLA','RIVN','LCID','NIO','XPEV','LI','FSR','GOEV','AYRO'],
+  'EV Charging':                ['CHPT','BLNK','EVGO','VLTA','SBE','WAVE'],
+  'Aerospace / Defense':        ['BA','LMT','RTX','NOC','GD','HII','TDG','HEI','KTOS','RKLB','ASTS'],
+  'Space / Satellites':         ['RKLB','ASTS','SPCE','MNTS','BKSY','PL','GILT','GSAT'],
+  'Biotech / Genomics':         ['MRNA','BNTX','NVAX','ARKG','CRSP','EDIT','NTLA','BEAM','PACB','ILMN'],
+  'Biotech / Small Cap':        ['SAVA','AGEN','CYTO','OCGN','NKTR','IMVT','PRAX','IDYA'],
+  'Cannabis':                   ['TLRY','CGC','CURLF','CRON','ACB','SNDL','GTBIF','IIPR'],
+  'Fintech':                    ['SQ','PYPL','AFRM','UPST','SOFI','LC','OPEN','HOOD','COIN'],
+  'Crypto / Blockchain':        ['COIN','MSTR','RIOT','MARA','HUT','BITF','CLSK','BTBT','BTDR'],
+  'Semiconductors':             ['NVDA','AMD','INTC','QCOM','MU','AVGO','MRVL','AMAT','LRCX','KLAC','SMCI','ARM'],
+  'AI / Cloud':                 ['NVDA','MSFT','GOOGL','META','AMZN','ORCL','CRM','SNOW','PLTR','AI','BBAI'],
+  'Solar / Renewable Energy':   ['ENPH','SEDG','FSLR','SPWR','RUN','ARRY','NOVA','CSIQ','JKS'],
+  'Wind / Clean Energy':        ['NEE','BEP','CWEN','AY','ICLN','PLUG','BE','FCEL','BLDP'],
+  'Oil & Gas':                  ['XOM','CVX','COP','OXY','PXD','DVN','HES','MRO','APA','CLR'],
+  'Oil Services':               ['SLB','HAL','BKR','NOV','FTI','LBRT','PUMP','NINE'],
+  'Banks / Financials':         ['JPM','BAC','WFC','C','GS','MS','USB','PNC','TFC','RF','SCHW'],
+  'Insurance':                  ['BRK-B','MET','PRU','AFL','TRV','ALL','CB','PGR','HIG'],
+  'Real Estate / REITs':        ['AMT','PLD','EQIX','SPG','O','VICI','WPC','NNN','STAG'],
+  'Healthcare':                 ['JNJ','UNH','PFE','ABBV','MRK','LLY','BMY','AMGN','GILD'],
+  'Retail':                     ['AMZN','WMT','TGT','COST','HD','LOW','TJX','ROST','DG','DLTR'],
+  'Airlines':                   ['DAL','UAL','AAL','LUV','SAVE','ALK','HA','JBLU','SKYW'],
+  'Cruise / Travel':            ['CCL','RCL','NCLH','HLT','MAR','H','MGM','WYNN','LVS'],
+  'Streaming / Media':          ['NFLX','DIS','WBD','PARA','FOXA','ROKU','SPOT','TTWO','EA'],
+  'Electric Utilities':         ['NEE','DUK','SO','D','AEP','EXC','PCG','XEL','WEC','ED'],
+  'Shipping / Freight':         ['ZIM','DAC','GSL','SB','GOGL','EGLE','SBLK','NMM','GNK'],
+};
+
+// Custom additions stored per-session
+var customPeers = {};
+var currentSector = null;
+var currentPeerTicker = null;
+
+function p_findSector(ticker) {
+  ticker = ticker.toUpperCase();
+  for (var sector in SECTOR_MAP) {
+    if (SECTOR_MAP[sector].indexOf(ticker) !== -1) return sector;
+  }
+  // Check custom additions
+  for (var s in customPeers) {
+    if (customPeers[s] && customPeers[s].indexOf(ticker) !== -1) return s;
+  }
+  return null;
+}
+
+function p_getPeers(sector) {
+  var base = SECTOR_MAP[sector] ? SECTOR_MAP[sector].slice() : [];
+  var custom = customPeers[sector] ? customPeers[sector] : [];
+  // Merge and dedupe
+  custom.forEach(function(t) { if (base.indexOf(t) === -1) base.push(t); });
+  return base;
+}
+
+async function p_loadPeers() {
+  var ticker = document.getElementById('p_ticker').value.trim().toUpperCase();
+  if (!ticker) return;
+  currentPeerTicker = ticker;
+
+  document.getElementById('p_status').textContent = 'SEARCHING...';
+  document.getElementById('p_placeholder').style.display = 'none';
+  document.getElementById('p_results').style.display = 'none';
+  document.getElementById('p_sector_display').style.display = 'none';
+
+  // Find sector
+  var sector = p_findSector(ticker);
+
+  // If not in map, try to get sector from yfinance backend
+  if (!sector) {
+    try {
+      var q = await apiFetch('/quote/' + ticker);
+      if (q.sector) {
+        // Try to match to our map
+        for (var s in SECTOR_MAP) {
+          if (s.toLowerCase().indexOf(q.sector.toLowerCase()) !== -1) { sector = s; break; }
+        }
+      }
+    } catch(e) {}
+  }
+
+  if (!sector) {
+    document.getElementById('p_status').textContent = '"' + ticker + '" NOT FOUND IN SECTOR MAP — ADD IT MANUALLY BELOW';
+    document.getElementById('p_results').style.display = 'block';
+    document.getElementById('p_sector_display').style.display = 'none';
+    document.getElementById('p_tbody').innerHTML = '<tr><td colspan="5" style="color:#664d00;text-align:center;padding:1rem;">NO SECTOR MATCH FOUND FOR ' + ticker + '</td></tr>';
+    return;
+  }
+
+  currentSector = sector;
+  document.getElementById('p_sector_name').textContent = sector.toUpperCase();
+  document.getElementById('p_sector_display').style.display = 'block';
+
+  var peers = p_getPeers(sector);
+  // Filter out the searched ticker from peers list
+  peers = peers.filter(function(t) { return t !== ticker; });
+  // Add searched ticker at top
+  peers.unshift(ticker);
+
+  document.getElementById('p_status').textContent = 'LOADING ' + peers.length + ' PEERS...';
+  document.getElementById('p_tbody').innerHTML = '';
+
+  // Load quotes for all peers in parallel (batched)
+  var results = await Promise.allSettled(peers.map(function(t) {
+    return apiFetch('/quote/' + t).then(function(q) { return { ticker: t, quote: q }; });
+  }));
+
+  var tbody = document.getElementById('p_tbody');
+  tbody.innerHTML = '';
+
+  results.forEach(function(r) {
+    var tr = document.createElement('tr');
+    if (r.status === 'fulfilled') {
+      var d = r.value;
+      var change = d.quote.price - d.quote.prev;
+      var changePct = d.quote.prev ? (change / d.quote.prev * 100) : 0;
+      var isSearched = d.ticker === ticker;
+      var changeColor = change >= 0 ? '#aacc00' : '#ff4400';
+      tr.innerHTML =
+        '<td style="color:' + (isSearched ? '#ffee66' : '#ffcc00') + ';font-weight:' + (isSearched ? '700' : '400') + ';">' +
+          (isSearched ? '&#9658; ' : '') + d.ticker +
+        '</td>' +
+        '<td style="font-family:var(--sans,sans-serif);font-size:11px;color:#886600;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+          (d.quote.name || '').toUpperCase() +
+        '</td>' +
+        '<td>$' + Number(d.quote.price).toFixed(2) + '</td>' +
+        '<td style="color:' + changeColor + ';">' + (change >= 0 ? '+' : '') + change.toFixed(2) + '</td>' +
+        '<td style="color:' + changeColor + ';">' + (changePct >= 0 ? '+' : '') + changePct.toFixed(2) + '%</td>';
+      // Click to load in analyzer
+      tr.style.cursor = 'pointer';
+      tr.title = 'Click to load ' + d.ticker + ' in Analyzer';
+      (function(t) {
+        tr.addEventListener('click', function() {
+          document.getElementById('ticker').value = t;
+          switchTab('tab1');
+          fetchAll();
+        });
+      })(d.ticker);
+    } else {
+      tr.innerHTML = '<td>' + r.value.ticker + '</td><td colspan="4" style="color:#443300;">UNAVAILABLE</td>';
+    }
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('p_results').style.display = 'block';
+  document.getElementById('p_status').textContent = peers.length + ' PEERS LOADED // CLICK ROW TO LOAD IN ANALYZER';
+}
+
+document.getElementById('p_loadBtn').addEventListener('click', p_loadPeers);
+document.getElementById('p_ticker').addEventListener('keydown', function(e) { if (e.key === 'Enter') p_loadPeers(); });
+
+document.getElementById('p_addBtn').addEventListener('click', function() {
+  var t = document.getElementById('p_add_ticker').value.trim().toUpperCase();
+  if (!t || !currentSector) return;
+  if (!customPeers[currentSector]) customPeers[currentSector] = [];
+  if (customPeers[currentSector].indexOf(t) === -1) {
+    customPeers[currentSector].push(t);
+    document.getElementById('p_add_status').textContent = t + ' ADDED TO ' + currentSector.toUpperCase();
+    document.getElementById('p_add_ticker').value = '';
+    p_loadPeers(); // reload
+  } else {
+    document.getElementById('p_add_status').textContent = t + ' ALREADY IN LIST';
+  }
 });
 </script>
 </body>
